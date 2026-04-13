@@ -5,7 +5,6 @@ const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 })
 
-// Attach Supabase JWT to every request automatically
 apiClient.interceptors.request.use(async (config) => {
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token

@@ -18,14 +18,7 @@ export default function ScoreCard({ score }: ScoreCardProps) {
     <div className="flex flex-col items-center">
       <div className="relative w-40 h-40">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-          {/* Background circle */}
-          <circle
-            cx="60" cy="60" r="54"
-            fill="none"
-            stroke="#1f1f1f"
-            strokeWidth="8"
-          />
-          {/* Score arc */}
+          <circle cx="60" cy="60" r="54" fill="none" stroke="#1f1f1f" strokeWidth="8" />
           <circle
             cx="60" cy="60" r="54"
             fill="none"
@@ -37,17 +30,12 @@ export default function ScoreCard({ score }: ScoreCardProps) {
             className={`${text} transition-all duration-1000`}
           />
         </svg>
-        {/* Score number */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-4xl font-bold ${text} ${glow}`}>
-            {score}
-          </span>
+          <span className={`text-4xl font-bold ${text} ${glow}`}>{score}</span>
           <span className="text-dedsec-muted text-xs">/100</span>
         </div>
       </div>
-      <span className={`mt-2 text-xs font-bold tracking-widest ${text}`}>
-        {label}
-      </span>
+      <span className={`mt-2 text-xs font-bold tracking-widest ${text}`}>{label}</span>
     </div>
   )
 }

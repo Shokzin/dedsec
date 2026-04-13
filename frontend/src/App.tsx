@@ -10,7 +10,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) return (
     <div className="min-h-screen bg-dedsec-bg flex items-center justify-center">
-      <p className="text-dedsec-green animate-pulse-green text-2xl">Ã¢ËœÂ Ã¯Â¸Â</p>
+      <p className="text-dedsec-green animate-pulse-green text-2xl">☠️</p>
     </div>
   )
 
@@ -23,25 +23,16 @@ function AppRoutes() {
 
   if (loading) return (
     <div className="min-h-screen bg-dedsec-bg flex items-center justify-center">
-      <p className="text-dedsec-green animate-pulse-green text-2xl">Ã¢ËœÂ Ã¯Â¸Â</p>
+      <p className="text-dedsec-green animate-pulse-green text-2xl">☠️</p>
     </div>
   )
 
   return (
     <Routes>
-      <Route
-        path="/"
-        element={user ? <Navigate to="/dashboard" replace /> : <AuthPage />}
-      />
-      <Route path="/dashboard" element={
-        <ProtectedRoute><DashboardPage /></ProtectedRoute>
-      }/>
-      <Route path="/scan" element={
-        <ProtectedRoute><ScanPage /></ProtectedRoute>
-      }/>
-      <Route path="/report/:scanId" element={
-        <ProtectedRoute><ReportPage /></ProtectedRoute>
-      }/>
+      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage />} />
+      <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/scan" element={<ProtectedRoute><ScanPage /></ProtectedRoute>} />
+      <Route path="/report/:scanId" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

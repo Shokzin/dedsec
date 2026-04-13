@@ -16,27 +16,13 @@ body {
   padding: 0;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: #111111
-}
-::-webkit-scrollbar-thumb {
-  background: #00ff41;
-  border-radius: 2px;
-}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #111111; }
+::-webkit-scrollbar-thumb { background: #00ff41; border-radius: 2px; }
 
-/* Animations */
 @keyframes pulse-green {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
-}
-
-@keyframes scan-line {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
 }
 
 @keyframes flicker {
@@ -48,30 +34,10 @@ body {
   97% { opacity: 1; }
 }
 
-.animate-pulse-green {
-  animation: pulse-green 2s ease-in-out infinite;
-}
-
-.animate-flicker {
-  animation: flicker 5s infinite;
-}
-
-.glow-green {
-  text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
-}
-
-.glow-cyan {
-  text-shadow: 0 0 10px #00d4ff, 0 0 20px #00d4ff;
-}
-
-.glow-red {
-  text-shadow: 0 0 10px #ff3131, 0 0 20px #ff3131;
-}
-
-.border-glow-green {
-  box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
-}
-
-.border-glow-red {
-  box-shadow: 0 0 10px rgba(255, 49, 49, 0.2);
-}
+.animate-pulse-green { animation: pulse-green 2s ease-in-out infinite; }
+.animate-flicker { animation: flicker 5s infinite; }
+.glow-green { text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41; }
+.glow-cyan { text-shadow: 0 0 10px #00d4ff, 0 0 20px #00d4ff; }
+.glow-red { text-shadow: 0 0 10px #ff3131, 0 0 20px #ff3131; }
+.border-glow-green { box-shadow: 0 0 10px rgba(0, 255, 65, 0.2); }
+.border-glow-red { box-shadow: 0 0 10px rgba(255, 49, 49, 0.2); }

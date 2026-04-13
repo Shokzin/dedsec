@@ -6,10 +6,3 @@ export const SEVERITY_COLORS: Record<SeverityLevel, string> = {
   medium: 'text-yellow-400 border-yellow-400 bg-yellow-400/10',
   low: 'text-blue-400 border-blue-400 bg-blue-400/10',
 }
-
-export const SEVERITY_GLOW: Record<SeverityLevel, string> = {
-  critical: 'shadow-[0_0_10px_rgba(255,49,49,0.3)]',
-  high: 'shadow-[0_0_10px_rgba(251,146,60,0.3)]',
-  medium: 'shadow-[0_0_10px_rgba(250,204,21,0.3)]',
-  low: 'shadow-[0_0_10px_rgba(96,165,250,0.3)]',
-}

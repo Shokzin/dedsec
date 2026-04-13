@@ -1,9 +1,5 @@
 import apiClient from './client'
 
-export interface ScanCreateRequest {
-  repo_url: string
-}
-
 export interface VulnerabilityItem {
   id: string
   type: string
@@ -47,16 +43,14 @@ export interface ScanListItem {
 }
 
 export const scansApi = {
-  create: async (request: ScanCreateRequest) => {
+  create: async (request: { repo_url: string }) => {
     const { data } = await apiClient.post('/api/v1/scans', request)
     return data
   },
-
   list: async (): Promise<ScanListItem[]> => {
     const { data } = await apiClient.get('/api/v1/scans')
     return data
   },
-
   get: async (scanId: string): Promise<ScanReport> => {
     const { data } = await apiClient.get(`/api/v1/scans/${scanId}`)
     return data

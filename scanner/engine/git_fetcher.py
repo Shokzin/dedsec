@@ -25,42 +25,31 @@ class GitFetcher:
 
     def clone(self, repo_url: str) -> tuple[str, list[str]]:
         repo_path = os.path.join(self.base_dir, "repo")
-
         result = subprocess.run(
             ["git", "clone", "--depth=1", "--single-branch", repo_url, repo_path],
-            capture_output=True,
-            text=True,
-            timeout=60,
+            capture_output=True, text=True, timeout=60,
         )
-
         if result.returncode != 0:
             raise ValueError(f"Git clone failed: {result.stderr[:200]}")
-
         file_list = self._collect_files(repo_path)
         return repo_path, file_list
 
     def _collect_files(self, repo_path: str) -> list[str]:
         files = []
         root = Path(repo_path)
-
         for path in root.rglob("*"):
             if path.is_dir():
                 continue
-
             parts = set(path.relative_to(root).parts)
             if parts & SKIP_DIRS:
                 continue
-
             try:
                 if path.stat().st_size > MAX_FILE_SIZE_BYTES:
                     continue
             except OSError:
                 continue
-
             suffix = path.suffix.lower() or path.name.lower()
             if suffix not in ALLOWED_EXTENSIONS:
                 continue
-
             files.append(str(path.relative_to(root)))
-
         return files

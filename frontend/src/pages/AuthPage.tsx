@@ -16,29 +16,18 @@ export default function AuthPage() {
     setError(null)
     setSuccess(null)
     setLoading(true)
-
     if (mode === 'login') {
       const { error } = await signIn(email, password)
-      if (error) {
-        setError(error)
-      } else {
-        navigate('/dashboard')
-      }
+      if (error) { setError(error) } else { navigate('/dashboard') }
     } else {
       const { error } = await signUp(email, password)
-      if (error) {
-        setError(error)
-      } else {
-        setSuccess('Account created! Check your email to confirm.')
-      }
+      if (error) { setError(error) } else { setSuccess('Account created! Check your email to confirm.') }
     }
-
     setLoading(false)
   }
 
   return (
     <div className="min-h-screen bg-dedsec-bg flex items-center justify-center px-4">
-      {/* Background grid effect */}
       <div
         className="fixed inset-0 opacity-5 pointer-events-none"
         style={{
@@ -46,88 +35,44 @@ export default function AuthPage() {
           backgroundSize: '40px 40px',
         }}
       />
-
       <div className="w-full max-w-md z-10">
-        {/* Logo */}
         <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold text-dedsec-green glow-green animate-flicker mb-2">
-            â˜ ï¸ DEDSEC
-          </h1>
-          <p className="text-dedsec-muted text-sm tracking-widest uppercase">
-            Vulnerability Analysis Platform
-          </p>
+          <h1 className="text-5xl font-bold text-dedsec-green glow-green animate-flicker mb-2">☠️ DEDSEC</h1>
+          <p className="text-dedsec-muted text-sm tracking-widest uppercase">Vulnerability Analysis Platform</p>
         </div>
-
-        {/* Card */}
         <div className="bg-dedsec-card border border-dedsec-border rounded-lg p-8 border-glow-green">
-          {/* Tabs */}
           <div className="flex mb-8 border border-dedsec-border rounded-md overflow-hidden">
             <button
               onClick={() => { setMode('login'); setError(null) }}
-              className={`flex-1 py-2 text-sm font-medium transition-all ${
-                mode === 'login'
-                  ? 'bg-dedsec-green text-black'
-                  : 'text-dedsec-muted hover:text-white'
-              }`}
-            >
-              LOGIN
-            </button>
+              className={`flex-1 py-2 text-sm font-medium transition-all ${mode === 'login' ? 'bg-dedsec-green text-black' : 'text-dedsec-muted hover:text-white'}`}
+            >LOGIN</button>
             <button
               onClick={() => { setMode('register'); setError(null) }}
-              className={`flex-1 py-2 text-sm font-medium transition-all ${
-                mode === 'register'
-                  ? 'bg-dedsec-green text-black'
-                  : 'text-dedsec-muted hover:text-white'
-              }`}
-            >
-              REGISTER
-            </button>
+              className={`flex-1 py-2 text-sm font-medium transition-all ${mode === 'register' ? 'bg-dedsec-green text-black' : 'text-dedsec-muted hover:text-white'}`}
+            >REGISTER</button>
           </div>
-
-          {/* Fields */}
           <div className="space-y-4">
             <div>
-              <label className="block text-xs text-dedsec-muted mb-1 tracking-wider uppercase">
-                Email
-              </label>
+              <label className="block text-xs text-dedsec-muted mb-1 tracking-wider uppercase">Email</label>
               <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+                type="email" value={email} onChange={e => setEmail(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                 placeholder="operator@dedsec.net"
                 className="w-full bg-dedsec-bg border border-dedsec-border rounded px-4 py-3 text-sm text-white placeholder-dedsec-muted focus:outline-none focus:border-dedsec-green transition-colors"
               />
             </div>
-
             <div>
-              <label className="block text-xs text-dedsec-muted mb-1 tracking-wider uppercase">
-                Password
-              </label>
+              <label className="block text-xs text-dedsec-muted mb-1 tracking-wider uppercase">Password</label>
               <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
+                type="password" value={password} onChange={e => setPassword(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                placeholder="••••••••••••"
                 className="w-full bg-dedsec-bg border border-dedsec-border rounded px-4 py-3 text-sm text-white placeholder-dedsec-muted focus:outline-none focus:border-dedsec-green transition-colors"
               />
             </div>
           </div>
-
-          {/* Error / Success */}
-          {error && (
-            <div className="mt-4 p-3 border border-dedsec-red/50 bg-dedsec-red/10 rounded text-dedsec-red text-xs">
-              âš  {error}
-            </div>
-          )}
-          {success && (
-            <div className="mt-4 p-3 border border-dedsec-green/50 bg-dedsec-green/10 rounded text-dedsec-green text-xs">
-              âœ“ {success}
-            </div>
-          )}
-
-          {/* Submit */}
+          {error && <div className="mt-4 p-3 border border-dedsec-red/50 bg-dedsec-red/10 rounded text-dedsec-red text-xs">⚠ {error}</div>}
+          {success && <div className="mt-4 p-3 border border-dedsec-green/50 bg-dedsec-green/10 rounded text-dedsec-green text-xs">✓ {success}</div>}
           <button
             onClick={handleSubmit}
             disabled={loading || !email || !password}
@@ -136,10 +81,7 @@ export default function AuthPage() {
             {loading ? 'CONNECTING...' : mode === 'login' ? 'ACCESS SYSTEM' : 'CREATE ACCOUNT'}
           </button>
         </div>
-
-        <p className="text-center text-dedsec-muted text-xs mt-6">
-          We are everywhere.
-        </p>
+        <p className="text-center text-dedsec-muted text-xs mt-6">We are everywhere.</p>
       </div>
     </div>
   )

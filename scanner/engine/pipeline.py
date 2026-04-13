@@ -26,12 +26,7 @@ class PipelineResult:
 
 
 class ScanPipeline:
-    def __init__(
-        self,
-        scan_id: str,
-        repo_url: str,
-        progress_callback: Callable[[str, int, int], None] | None = None,
-    ):
+    def __init__(self, scan_id: str, repo_url: str, progress_callback: Callable | None = None):
         self.scan_id = scan_id
         self.repo_url = repo_url
         self.progress = progress_callback or (lambda msg, pct, partial=0: None)
@@ -56,7 +51,7 @@ class ScanPipeline:
         all_vulns.extend(pattern_findings)
         self.progress(f"Pattern scan done — {len(pattern_findings)} findings", 45, len(all_vulns))
 
-        self.progress("Analyzing code structure for injection vulnerabilities...", 50)
+        self.progress("Analyzing code structure...", 50)
         ast_findings = ASTAnalyzer().analyze(repo_path, file_list)
         all_vulns.extend(ast_findings)
         self.progress(f"AST analysis done — {len(ast_findings)} findings", 65, len(all_vulns))
@@ -80,7 +75,6 @@ class ScanPipeline:
             low_count=sum(1 for v in unique_vulns if v.severity == "low"),
             scanned_files=len(file_list),
         )
-
         logger.info("pipeline_complete", scan_id=self.scan_id, total=len(unique_vulns), score=score)
         return result
 
