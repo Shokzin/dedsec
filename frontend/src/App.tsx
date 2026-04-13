@@ -10,7 +10,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) return (
     <div className="min-h-screen bg-dedsec-bg flex items-center justify-center">
-      <p className="text-dedsec-green animate-pulse-green text-2xl">☠️</p>
+      <p className="text-dedsec-green animate-pulse-green text-2xl">Ã¢ËœÂ Ã¯Â¸Â</p>
     </div>
   )
 
@@ -23,7 +23,7 @@ function AppRoutes() {
 
   if (loading) return (
     <div className="min-h-screen bg-dedsec-bg flex items-center justify-center">
-      <p className="text-dedsec-green animate-pulse-green text-2xl">☠️</p>
+      <p className="text-dedsec-green animate-pulse-green text-2xl">Ã¢ËœÂ Ã¯Â¸Â</p>
     </div>
   )
 
