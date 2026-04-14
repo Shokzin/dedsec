@@ -1,29 +1,27 @@
 services:
   api:
-    build: ./backend
-    container_name: dedsec_api
-    ports:
-      - "8000:8000"
-    env_file: .env
-    volumes:
-      - ./backend:/app
-      - ./scanner:/scanner
-      - scan_tmp:/tmp/scans
-    depends_on:
-      - redis
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      build: ./backend
+      container_name: dedsec_api
+      ports:
+        - "8000:8000"
+      env_file: .env
+      volumes:
+        - ./backend:/app
+        - scan_tmp:/tmp/scans
+      depends_on:
+        - redis
+      command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   worker:
-    build: ./backend
-    container_name: dedsec_worker
-    env_file: .env
-    volumes:
-      - ./backend:/app
-      - ./scanner:/scanner
-      - scan_tmp:/tmp/scans
-    depends_on:
-      - redis
-    command: celery -A worker.celery_app worker --loglevel=info --concurrency=4
+      build: ./backend
+      container_name: dedsec_worker
+      env_file: .env
+      volumes:
+        - ./backend:/app
+        - scan_tmp:/tmp/scans
+      depends_on:
+        - redis
+      command: celery -A worker.celery_app worker --loglevel=info --concurrency=4
 
   redis:
     image: redis:7-alpine
@@ -45,6 +43,5 @@ services:
     command: npm run dev -- --host
 
 volumes:
-      - ./backend:/app
-      - ./scanner:/scanner
-      - scan_tmp:/tmp/scans
+  redis_data:
+  scan_tmp:

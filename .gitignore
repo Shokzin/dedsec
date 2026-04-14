@@ -1,6 +1,7 @@
 # Environment files — never commit these
 .env
 .env.*
+.env.example
 !.env.example
 .env.local
 .env.production

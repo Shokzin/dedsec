@@ -1,0 +1,118 @@
+import os
+import json
+import uuid
+from pathlib import Path
+from anthropic import Anthropic
+from scanner.engine.finding import Finding
+
+client = Anthropic()
+
+SYSTEM_PROMPT = """You are a senior application security engineer performing a code security review.
+Your job is to identify security vulnerabilities that static analysis tools miss — such as:
+- Insecure Direct Object Reference (IDOR)
+- Business logic flaws
+- Missing authorization checks
+- Race conditions
+- Insecure state management
+- Privilege escalation paths
+
+For each vulnerability found, respond ONLY with a valid JSON array.
+Each item must have these exact fields:
+{
+  "type": "vulnerability_type_snake_case",
+  "title": "Short human-readable title",
+  "description": "Clear explanation of the vulnerability",
+  "severity": "low|medium|high|critical",
+  "file_path": "relative/path/to/file.py",
+  "line_start": 1,
+  "line_end": 5,
+  "code_snippet": "relevant code excerpt",
+  "recommendation": "How to fix it",
+  "cwe_id": "CWE-XXX",
+  "owasp_category": "AXX:2021 – Category Name"
+}
+
+If no vulnerabilities are found, respond with an empty array: []
+Respond with ONLY the JSON array — no explanation, no markdown, no extra text."""
+
+
+class AIAnalyzer:
+    """
+    Uses Claude to detect complex logic-level vulnerabilities that
+    regex and AST analysis cannot reliably find.
+    Only sends high-value files to the API to keep costs low.
+    """
+
+    # Only send files likely to contain business logic
+    TARGET_EXTENSIONS = {".py", ".js", ".ts", ".jsx", ".tsx"}
+    MAX_FILES = 20
+    MAX_FILE_CHARS = 8000   # Truncate large files to stay within context limits
+
+    def analyze(self, repo_path: str, file_list: list[str]) -> list[Finding]:
+        findings = []
+        candidates = [
+            f for f in file_list
+            if Path(f).suffix in self.TARGET_EXTENSIONS
+        ][:self.MAX_FILES]
+
+        for rel_path in candidates:
+            abs_path = os.path.join(repo_path, rel_path)
+            try:
+                content = Path(abs_path).read_text(errors="replace")
+                if len(content.strip()) < 50:
+                    continue
+                truncated = content[:self.MAX_FILE_CHARS]
+                file_findings = self._analyze_file(rel_path, truncated)
+                findings.extend(file_findings)
+            except OSError:
+                continue
+
+        return findings
+
+    def _analyze_file(self, rel_path: str, content: str) -> list[Finding]:
+        try:
+            response = client.messages.create(
+                model="claude-opus-4-6",
+                max_tokens=2048,
+                system=SYSTEM_PROMPT,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Analyze this file for security vulnerabilities:\n\n"
+                                   f"File: {rel_path}\n\n```\n{content}\n```",
+                    }
+                ],
+            )
+
+            raw = response.content[0].text.strip()
+            # Strip markdown fences if model wrapped the JSON
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+
+            items = json.loads(raw)
+            if not isinstance(items, list):
+                return []
+
+            return [
+                Finding(
+                    id=str(uuid.uuid4()),
+                    type=item.get("type", "unknown"),
+                    title=item.get("title", "Unknown Vulnerability"),
+                    description=item.get("description", ""),
+                    severity=item.get("severity", "medium"),
+                    file_path=item.get("file_path", rel_path),
+                    line_start=int(item.get("line_start", 1)),
+                    line_end=int(item.get("line_end", 1)),
+                    code_snippet=item.get("code_snippet", ""),
+                    recommendation=item.get("recommendation", ""),
+                    cwe_id=item.get("cwe_id"),
+                    owasp_category=item.get("owasp_category"),
+                )
+                for item in items
+                if isinstance(item, dict)
+            ]
+
+        except (json.JSONDecodeError, Exception):
+            return []
