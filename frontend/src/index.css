@@ -4,6 +4,16 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --dedsec-bg: #0a0a0a;
+  --dedsec-card: #111111;
+  --dedsec-border: #1f1f1f;
+  --dedsec-green: #00ff41;
+  --dedsec-cyan: #00d4ff;
+  --dedsec-red: #ff3131;
+  --dedsec-muted: #666666;
+}
+
 * {
   box-sizing: border-box;
 }
