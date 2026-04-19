@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom'
+import { useTheme, getTokens } from '../hooks/useTheme'
+import ThemeToggle from '../components/ThemeToggle'
 import { useEffect, useRef, useState, useCallback } from 'react'
 
 // ─── Bidirectional reveal hook ─────────────────────────────────────────────
@@ -420,6 +422,8 @@ function ScanCarousel() {
 // ─── Main component ────────────────────────────────────────────────────────
 export default function LandingPage() {
   const navigate = useNavigate()
+  const { isDark } = useTheme()
+  const t = getTokens(isDark)
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
@@ -435,7 +439,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div style={{ fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", background: '#ffffff', color: '#111111', overflowX: 'hidden' }}>
+    <div style={{ fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", background: t.bg, color: t.text, overflowX: 'hidden' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
 
@@ -443,10 +447,10 @@ export default function LandingPage() {
         html { scroll-behavior: smooth; }
         ::selection { background: #111; color: #fff; }
 
-        /* Scrollbar — neutral, comfortable width */
+        /* Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f5f5f5; }
-        ::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: ${t.scrollTrack}; }
+        ::-webkit-scrollbar-thumb { background: ${t.scrollThumb}; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #aaa; }
 
         .btn-primary {
@@ -532,6 +536,7 @@ export default function LandingPage() {
               <button key={id} className="nav-link" onClick={() => scrollTo(id)}>{label}</button>
             ))}
             <div style={{ width: 1, height: 20, background: '#e0e0e0' }} />
+            <ThemeToggle />
             <button className="nav-link" onClick={() => navigate('/auth')}>Sign in</button>
             <button className="btn-primary" style={{ padding: '9px 20px', fontSize: 14 }} onClick={() => navigate('/auth')}>
               Get started
