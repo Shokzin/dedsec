@@ -1,113 +1,284 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+import { useTheme, getTokens } from '../hooks/useTheme'
+import { useAuth } from '../hooks/useAuth'
 import { scansApi } from '../api/scans'
 import type { ScanListItem } from '../api/scans'
-import Layout from '../components/Layout/Layout'
+import AppLayout from '../components/Layout/AppLayout'
 
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    completed: 'text-dedsec-green border-dedsec-green',
-    running: 'text-dedsec-cyan border-dedsec-cyan animate-pulse',
-    queued: 'text-yellow-400 border-yellow-400',
-    failed: 'text-dedsec-red border-dedsec-red',
+function StatusPill({ status }: { status: string }) {
+  const configs: Record<string, { bg: string; color: string; dot: string }> = {
+    completed: { bg: '#dcfce7', color: '#16a34a', dot: '#22c55e' },
+    running:   { bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
+    queued:    { bg: '#fef9c3', color: '#854d0e', dot: '#eab308' },
+    failed:    { bg: '#fee2e2', color: '#dc2626', dot: '#ef4444' },
   }
+  const cfg = configs[status] ?? { bg: '#f3f4f6', color: '#6b7280', dot: '#9ca3af' }
   return (
-    <span className={`text-xs border px-2 py-0.5 rounded uppercase tracking-wider ${styles[status] ?? 'text-dedsec-muted border-dedsec-border'}`}>
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      background: cfg.bg, color: cfg.color,
+      fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 100,
+      textTransform: 'capitalize', letterSpacing: '0.02em', whiteSpace: 'nowrap',
+    }}>
+      <span style={{
+        width: 6, height: 6, borderRadius: '50%', background: cfg.dot,
+        animation: status === 'running' ? 'pulse 1.5s infinite' : 'none',
+      }} />
       {status}
     </span>
   )
 }
 
-function ScanRow({ scan, onClick }: { scan: ScanListItem; onClick: () => void }) {
+function ScoreBadge({ score }: { score: number | null }) {
+  if (score === null) return <span style={{ fontSize: 13, color: '#9ca3af' }}>—</span>
+  const color = score >= 80 ? '#16a34a' : score >= 60 ? '#d97706' : score >= 40 ? '#ea580c' : '#dc2626'
+  return (
+    <span style={{ fontSize: 15, fontWeight: 600, color, fontFamily: "'DM Mono', monospace" }}>
+      {score}
+    </span>
+  )
+}
+
+function ScanRow({ scan, onClick, t }: {
+  scan: ScanListItem; onClick: () => void; t: ReturnType<typeof getTokens>
+}) {
   const repoName = scan.repo_url.replace('https://github.com/', '')
-  const date = new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const [owner, repo] = repoName.split('/')
+  const date = new Date(scan.created_at).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  })
+  const time = new Date(scan.created_at).toLocaleTimeString('en-US', {
+    hour: '2-digit', minute: '2-digit',
+  })
 
   return (
-    <div onClick={onClick} className="flex items-center justify-between p-4 border border-dedsec-border rounded-lg bg-dedsec-card hover:border-dedsec-green/50 cursor-pointer transition-all group">
-      <div className="flex items-center gap-4 min-w-0">
-        <span className="text-dedsec-green text-lg">⬡</span>
-        <div className="min-w-0">
-          <p className="text-sm text-white font-medium truncate group-hover:text-dedsec-green transition-colors">{repoName}</p>
-          <p className="text-xs text-dedsec-muted mt-0.5">{date}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-6 shrink-0">
-        {scan.status === 'completed' && (
-          <div className="text-center hidden sm:block">
-            <p className="text-xs text-dedsec-muted uppercase tracking-wider">Vulns</p>
-            <p className="text-sm font-bold text-white">{scan.total_vulnerabilities}</p>
+    <tr
+      onClick={onClick}
+      style={{ cursor: 'pointer', transition: 'background 0.15s' }}
+      onMouseEnter={e => (e.currentTarget.style.background = t.bgTertiary)}
+      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+    >
+      <td style={{ padding: '16px 20px', borderBottom: `1px solid ${t.borderLight}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: t.bgTertiary, border: `1px solid ${t.border}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill={t.textMuted}>
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
           </div>
-        )}
-        {scan.security_score !== null && (
-          <div className="text-center hidden sm:block">
-            <p className="text-xs text-dedsec-muted uppercase tracking-wider">Score</p>
-            <p className={`text-sm font-bold ${scan.security_score >= 80 ? 'text-dedsec-green' : scan.security_score >= 60 ? 'text-yellow-400' : scan.security_score >= 40 ? 'text-orange-400' : 'text-dedsec-red'}`}>
-              {scan.security_score}
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 500, color: t.text, fontFamily: "'DM Mono', monospace" }}>
+              <span style={{ color: t.textSecondary }}>{owner}/</span>{repo}
             </p>
+            <p style={{ fontSize: 11, color: t.textMuted, marginTop: 2 }}>{date} at {time}</p>
           </div>
-        )}
-        <StatusBadge status={scan.status} />
-        <span className="text-dedsec-muted group-hover:text-dedsec-green transition-colors">→</span>
-      </div>
-    </div>
+        </div>
+      </td>
+      <td style={{ padding: '16px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'center' }}>
+        <StatusPill status={scan.status} />
+      </td>
+      <td style={{ padding: '16px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'center' }}>
+        <ScoreBadge score={scan.security_score} />
+      </td>
+      <td style={{ padding: '16px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'center' }}>
+        {scan.status === 'completed'
+          ? <span style={{ fontSize: 13, color: t.textSecondary }}>{scan.total_vulnerabilities}</span>
+          : <span style={{ fontSize: 13, color: t.textMuted }}>—</span>
+        }
+      </td>
+      <td style={{ padding: '16px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'right' }}>
+        <span style={{ fontSize: 13, color: t.textMuted }}>→</span>
+      </td>
+    </tr>
   )
 }
 
 export default function DashboardPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const { isDark } = useTheme()
+  const t = getTokens(isDark)
+
   const { data: scans, isLoading, isError } = useQuery({
     queryKey: ['scans'],
     queryFn: scansApi.list,
     refetchInterval: 5000,
   })
 
+  const completed = scans?.filter(s => s.status === 'completed') ?? []
+  const avgScore = completed.length
+    ? Math.round(completed.reduce((a, b) => a + (b.security_score ?? 0), 0) / completed.length)
+    : null
+  const totalVulns = scans?.reduce((a, b) => a + b.total_vulnerabilities, 0) ?? 0
+  const running = scans?.filter(s => s.status === 'running' || s.status === 'queued') ?? []
+  const firstName = user?.email?.split('@')[0] ?? 'there'
+
   return (
-    <Layout>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Scan <span className="text-dedsec-green">History</span></h1>
-          <p className="text-dedsec-muted text-sm mt-1">{scans?.length ?? 0} repositories analyzed</p>
+    <AppLayout>
+      {/* Header */}
+      <div style={{ marginBottom: 40, animation: 'fadeIn 0.5s ease forwards' }}>
+        <p style={{ fontSize: 13, color: t.textMuted, marginBottom: 6 }}>
+          Welcome back, {firstName}
+        </p>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <h1 style={{
+            fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 300,
+            letterSpacing: '-1px', color: t.text, lineHeight: 1.2,
+          }}>
+            Scan <span style={{ fontWeight: 600 }}>Dashboard</span>
+          </h1>
+          <button
+            onClick={() => navigate('/scan')}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: t.btnPrimary, color: t.btnPrimaryTxt,
+              padding: '11px 22px', borderRadius: 6,
+              fontSize: 14, fontWeight: 500, fontFamily: 'inherit',
+              border: 'none', cursor: 'pointer', transition: 'opacity 0.2s, transform 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none' }}
+          >
+            + New scan
+          </button>
         </div>
-        <button onClick={() => navigate('/scan')} className="bg-dedsec-green text-black font-bold px-5 py-2.5 rounded text-sm tracking-wider uppercase hover:bg-green-300 transition-colors">
-          + New Scan
-        </button>
       </div>
 
+      {/* Stats */}
       {scans && scans.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 16, marginBottom: 40,
+        }}>
           {[
-            { label: 'Total Scans', value: scans.length },
-            { label: 'Completed', value: scans.filter(s => s.status === 'completed').length },
-            { label: 'Avg Score', value: (() => { const c = scans.filter(s => s.security_score !== null); if (!c.length) return '—'; return Math.round(c.reduce((a, b) => a + (b.security_score ?? 0), 0) / c.length) })() },
-            { label: 'Total Vulns', value: scans.reduce((a, b) => a + b.total_vulnerabilities, 0) },
-          ].map(stat => (
-            <div key={stat.label} className="bg-dedsec-card border border-dedsec-border rounded-lg p-4">
-              <p className="text-xs text-dedsec-muted uppercase tracking-wider">{stat.label}</p>
-              <p className="text-2xl font-bold text-dedsec-green mt-1">{stat.value}</p>
+            { label: 'Total scans', value: scans.length, mono: false },
+            { label: 'Completed', value: completed.length, mono: false },
+            { label: 'Avg score', value: avgScore !== null ? avgScore : '—', mono: true },
+            { label: 'Total findings', value: totalVulns, mono: false },
+          ].map((stat, i) => (
+            <div key={stat.label} style={{
+              background: t.cardBg, border: `1px solid ${t.cardBorder}`,
+              borderRadius: 10, padding: '20px 24px',
+              animation: `fadeIn 0.5s ease ${i * 60}ms both`,
+            }}>
+              <p style={{
+                fontSize: 12, color: t.textMuted, marginBottom: 8,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                {stat.label}
+              </p>
+              <p style={{
+                fontSize: 28, fontWeight: 600, color: t.text,
+                fontFamily: stat.mono ? "'DM Mono', monospace" : 'inherit',
+                letterSpacing: stat.mono ? '-1px' : '-0.5px',
+              }}>
+                {stat.value}
+              </p>
             </div>
           ))}
         </div>
       )}
 
-      {isLoading && <div className="text-center py-20 text-dedsec-muted"><p className="text-dedsec-green animate-pulse-green text-lg">⬡</p><p className="mt-2 text-sm">Loading...</p></div>}
-      {isError && <div className="text-center py-20 border border-dedsec-red/30 rounded-lg"><p className="text-dedsec-red text-sm">Failed to load scans. Is the API running?</p></div>}
+      {/* Active scans notice */}
+      {running.length > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: '#eff6ff', border: '1px solid #bfdbfe',
+          borderRadius: 8, padding: '12px 16px', marginBottom: 24,
+        }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3b82f6', animation: 'pulse 1.5s infinite', flexShrink: 0 }} />
+          <p style={{ fontSize: 13, color: '#1d4ed8' }}>
+            {running.length} scan{running.length > 1 ? 's' : ''} currently running — this page refreshes automatically.
+          </p>
+        </div>
+      )}
+
+      {/* States */}
+      {isLoading && (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: t.textMuted }}>
+          <div style={{
+            width: 28, height: 28, border: `2px solid ${t.border}`, borderTopColor: t.text,
+            borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px',
+          }} />
+          <p style={{ fontSize: 14 }}>Loading scans...</p>
+        </div>
+      )}
+
+      {isError && (
+        <div style={{
+          background: '#fee2e2', border: '1px solid #fecaca',
+          borderRadius: 8, padding: '16px 20px',
+        }}>
+          <p style={{ fontSize: 14, color: '#dc2626' }}>
+            Failed to load scans. Make sure the API is running at {import.meta.env.VITE_API_URL}.
+          </p>
+        </div>
+      )}
 
       {!isLoading && !isError && scans?.length === 0 && (
-        <div className="text-center py-20 border border-dedsec-border rounded-lg">
-          <p className="text-4xl mb-4">☠️</p>
-          <p className="text-white font-medium">No scans yet</p>
-          <p className="text-dedsec-muted text-sm mt-1 mb-6">Submit a GitHub repository to get started</p>
-          <button onClick={() => navigate('/scan')} className="border border-dedsec-green text-dedsec-green px-6 py-2 rounded text-sm tracking-wider uppercase hover:bg-dedsec-green hover:text-black transition-all">
-            Start First Scan
+        <div style={{
+          border: `1px dashed ${t.border}`, borderRadius: 12,
+          padding: '64px 40px', textAlign: 'center',
+        }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 12, background: t.bgTertiary,
+            border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', margin: '0 auto 20px', fontSize: 20,
+          }}>🔍</div>
+          <p style={{ fontSize: 16, fontWeight: 500, color: t.text, marginBottom: 8 }}>No scans yet</p>
+          <p style={{ fontSize: 14, color: t.textSecondary, marginBottom: 28 }}>
+            Submit a GitHub repository URL to run your first vulnerability scan.
+          </p>
+          <button
+            onClick={() => navigate('/scan')}
+            style={{
+              background: t.btnPrimary, color: t.btnPrimaryTxt,
+              padding: '11px 24px', borderRadius: 6, fontSize: 14, fontWeight: 500,
+              fontFamily: 'inherit', border: 'none', cursor: 'pointer',
+            }}
+          >
+            Start first scan →
           </button>
         </div>
       )}
 
       {!isLoading && scans && scans.length > 0 && (
-        <div className="space-y-3">
-          {scans.map(scan => <ScanRow key={scan.scan_id} scan={scan} onClick={() => navigate(`/report/${scan.scan_id}`)} />)}
+        <div style={{
+          border: `1px solid ${t.border}`, borderRadius: 10, overflow: 'hidden',
+          animation: 'fadeIn 0.5s ease forwards',
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: t.bgSecondary }}>
+                {['Repository', 'Status', 'Score', 'Findings', ''].map((h, i) => (
+                  <th key={h || i} style={{
+                    padding: '12px 20px', fontSize: 11, fontWeight: 600,
+                    color: t.textMuted, textAlign: i === 0 ? 'left' : i === 4 ? 'right' : 'center',
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
+                    borderBottom: `1px solid ${t.border}`,
+                  }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {scans.map(scan => (
+                <ScanRow
+                  key={scan.scan_id}
+                  scan={scan}
+                  t={t}
+                  onClick={() => navigate(`/report/${scan.scan_id}`)}
+                />
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
-    </Layout>
+    </AppLayout>
   )
 }
