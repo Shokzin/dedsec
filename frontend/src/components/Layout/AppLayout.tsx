@@ -21,23 +21,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isActive = (path: string) => location.pathname === path
 
   const navItem = (path: string, label: string) => (
-    <button
-      onClick={() => navigate(path)}
-      style={{
-        fontSize: 14,
-        fontWeight: isActive(path) ? 500 : 400,
-        color: isActive(path) ? t.text : t.textSecondary,
-        background: 'none', border: 'none', cursor: 'pointer',
-        fontFamily: 'inherit', padding: '4px 0',
-        borderBottom: `2px solid ${isActive(path) ? t.text : 'transparent'}`,
-        transition: 'color 0.2s, border-color 0.2s',
-      }}
+    <button key={path} onClick={() => navigate(path)} style={{
+      fontSize: 14,
+      fontWeight: isActive(path) ? 500 : 400,
+      color: isActive(path) ? t.text : t.textSecondary,
+      background: 'none', border: 'none', cursor: 'pointer',
+      fontFamily: 'inherit', padding: '4px 0',
+      borderBottom: `2px solid ${isActive(path) ? t.text : 'transparent'}`,
+      transition: 'color 0.2s, border-color 0.2s',
+    }}
       onMouseEnter={e => { if (!isActive(path)) e.currentTarget.style.color = t.text }}
       onMouseLeave={e => { if (!isActive(path)) e.currentTarget.style.color = t.textSecondary }}
     >
       {label}
     </button>
   )
+
+  // Use display name from user metadata, fall back to email username
+  const displayName = user?.user_metadata?.display_name
+    || user?.email?.split('@')[0]
+    || 'Account'
 
   return (
     <div style={{
@@ -56,7 +59,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
       `}</style>
 
-      {/* Nav */}
       <nav style={{
         borderBottom: `1px solid ${t.borderLight}`,
         padding: '0 5%', background: t.bg,
@@ -67,14 +69,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-            {/* Logo → navigates to landing page */}
-            <button
-              onClick={() => navigate('/')}
-              style={{
-                fontFamily: "'DM Mono', monospace", fontWeight: 500, fontSize: 16,
-                color: t.text, background: 'none', border: 'none', cursor: 'pointer',
-                letterSpacing: '-0.5px', transition: 'opacity 0.2s',
-              }}
+            {/* Logo → landing page */}
+            <button onClick={() => navigate('/')} style={{
+              fontFamily: "'DM Mono', monospace", fontWeight: 500, fontSize: 16,
+              color: t.text, background: 'none', border: 'none', cursor: 'pointer',
+              letterSpacing: '-0.5px', transition: 'opacity 0.2s',
+            }}
               onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
               onMouseLeave={e => e.currentTarget.style.opacity = '1'}
               title="Back to home"
@@ -87,20 +87,41 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{ fontSize: 13, color: t.textMuted }}>
-              {user?.email}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <ThemeToggle />
-            <button
-              onClick={handleSignOut}
-              disabled={signingOut}
-              style={{
-                fontSize: 13, fontWeight: 500, color: t.textSecondary,
-                background: 'none', border: `1.5px solid ${t.border}`,
-                borderRadius: 6, padding: '6px 14px', cursor: 'pointer',
-                fontFamily: 'inherit', transition: 'color 0.2s, border-color 0.2s',
+            {/* Profile button */}
+            <button onClick={() => navigate('/profile')} style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: isActive('/profile') ? t.bgTertiary : 'none',
+              border: `1.5px solid ${isActive('/profile') ? t.border : 'transparent'}`,
+              borderRadius: 6, padding: '5px 12px', cursor: 'pointer',
+              fontFamily: 'inherit', transition: 'all 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = t.bgTertiary; e.currentTarget.style.borderColor = t.border }}
+              onMouseLeave={e => {
+                if (!isActive('/profile')) {
+                  e.currentTarget.style.background = 'none'
+                  e.currentTarget.style.borderColor = 'transparent'
+                }
               }}
+            >
+              <div style={{
+                width: 24, height: 24, borderRadius: '50%',
+                background: t.text, color: t.bg,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 700, flexShrink: 0,
+              }}>
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 500, color: t.text }}>{displayName}</span>
+            </button>
+
+            <button onClick={handleSignOut} disabled={signingOut} style={{
+              fontSize: 13, fontWeight: 500, color: t.textSecondary,
+              background: 'none', border: `1.5px solid ${t.border}`,
+              borderRadius: 6, padding: '6px 14px', cursor: 'pointer',
+              fontFamily: 'inherit', transition: 'color 0.2s, border-color 0.2s',
+            }}
               onMouseEnter={e => { e.currentTarget.style.color = t.text; e.currentTarget.style.borderColor = t.text }}
               onMouseLeave={e => { e.currentTarget.style.color = t.textSecondary; e.currentTarget.style.borderColor = t.border }}
             >
