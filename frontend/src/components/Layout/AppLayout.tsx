@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme, getTokens } from '../../hooks/useTheme'
+import { supabase } from '../../lib/supabase'
 import ThemeToggle from '../ThemeToggle'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -11,6 +12,36 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isDark } = useTheme()
   const t = getTokens(isDark)
   const [signingOut, setSigningOut] = useState(false)
+
+  // ── Live display name + avatar ─────────────────────────────────────────
+  // We keep local state and subscribe to auth changes so the nav updates
+  // immediately when the user saves changes in the Profile page.
+  const [displayName, setDisplayName] = useState(
+    user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Account'
+  )
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    user?.user_metadata?.avatar_url ?? null
+  )
+
+  useEffect(() => {
+    // Sync from initial user object
+    if (user) {
+      setDisplayName(user.user_metadata?.display_name || user.email?.split('@')[0] || 'Account')
+      setAvatarUrl(user.user_metadata?.avatar_url ?? null)
+    }
+  }, [user])
+
+  useEffect(() => {
+    // Subscribe to auth state changes (fires after updateUser / refreshSession)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const u = session.user
+        setDisplayName(u.user_metadata?.display_name || u.email?.split('@')[0] || 'Account')
+        setAvatarUrl(u.user_metadata?.avatar_url ?? null)
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   const handleSignOut = async () => {
     setSigningOut(true)
@@ -36,11 +67,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {label}
     </button>
   )
-
-  // Use display name from user metadata, fall back to email username
-  const displayName = user?.user_metadata?.display_name
-    || user?.email?.split('@')[0]
-    || 'Account'
 
   return (
     <div style={{
@@ -89,15 +115,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <ThemeToggle />
-            {/* Profile button */}
+
+            {/* Profile button with live avatar */}
             <button onClick={() => navigate('/profile')} style={{
               display: 'flex', alignItems: 'center', gap: 8,
               background: isActive('/profile') ? t.bgTertiary : 'none',
               border: `1.5px solid ${isActive('/profile') ? t.border : 'transparent'}`,
-              borderRadius: 6, padding: '5px 12px', cursor: 'pointer',
+              borderRadius: 6, padding: '5px 10px', cursor: 'pointer',
               fontFamily: 'inherit', transition: 'all 0.2s',
             }}
-              onMouseEnter={e => { e.currentTarget.style.background = t.bgTertiary; e.currentTarget.style.borderColor = t.border }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = t.bgTertiary
+                e.currentTarget.style.borderColor = t.border
+              }}
               onMouseLeave={e => {
                 if (!isActive('/profile')) {
                   e.currentTarget.style.background = 'none'
@@ -105,15 +135,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 }
               }}
             >
+              {/* Avatar circle */}
               <div style={{
-                width: 24, height: 24, borderRadius: '50%',
-                background: t.text, color: t.bg,
+                width: 26, height: 26, borderRadius: '50%',
+                background: avatarUrl ? 'transparent' : t.text,
+                color: t.bg, overflow: 'hidden', flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11, fontWeight: 700, flexShrink: 0,
+                fontSize: 11, fontWeight: 700,
+                border: `1.5px solid ${t.border}`,
               }}>
-                {displayName.charAt(0).toUpperCase()}
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  displayName.charAt(0).toUpperCase()
+                )}
               </div>
-              <span style={{ fontSize: 13, fontWeight: 500, color: t.text }}>{displayName}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: t.text, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {displayName}
+              </span>
             </button>
 
             <button onClick={handleSignOut} disabled={signingOut} style={{
