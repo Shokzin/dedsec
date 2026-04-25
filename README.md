@@ -1,100 +1,99 @@
-<div align="center">
+# DedSec — Vulnerability Analysis Platform
 
-<br />
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.11-3776AB?style=flat-square&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/react-18-61DAFB?style=flat-square&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/fastapi-0.111-009688?style=flat-square&logo=fastapi&logoColor=white" />
+  <img src="https://img.shields.io/badge/supabase-2.4-3ECF8E?style=flat-square&logo=supabase&logoColor=white" />
+  <img src="https://img.shields.io/badge/docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white" />
+</p>
 
-# ☠️ DedSec
-
-**AI-Powered Vulnerability Analysis Platform**
-
-*We are everywhere.*
-
-<br />
-
-![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
-![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=black)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
-![Claude](https://img.shields.io/badge/Claude_AI-D97757?style=flat-square&logo=anthropic&logoColor=white)
-
-<br />
-
-> Submit any GitHub repository. Get a full security report in minutes.
-
-<br />
-
-</div>
+> Graduation project — Systems Analysis and Development.  
+> Submit any public GitHub repository URL and receive a detailed security vulnerability report.
 
 ---
 
 ## What it does
 
-DedSec scans GitHub repositories for security vulnerabilities using three layers of analysis running in parallel — pattern matching, code structure analysis, and AI-powered deep inspection via Claude.
+DedSec scans public GitHub repositories for security vulnerabilities without executing a single line of code from the target. You paste a URL, the platform clones the repository, runs three layers of static analysis in parallel, and returns a structured report within seconds.
 
-Every finding comes with the exact file, line number, severity level, CWE classification, and a clear recommendation. The result is a security score from **0 to 100**.
+Each finding includes the exact file path, line number, severity rating, CWE classification, OWASP category, a code excerpt, and a specific remediation recommendation.
 
 ---
 
 ## What it detects
 
-| Category | Vulnerabilities |
-|----------|----------------|
-| Secrets & Credentials | API keys, hardcoded passwords, tokens, AWS keys, private keys |
-| Injection | SQL Injection, XSS, Command Injection, Path Traversal |
-| Misconfiguration | Exposed `.env` files, CORS wildcards, debug mode enabled |
-| Code Quality | Unsafe deserialization, `eval()` on dynamic input, `shell=True` |
-| Logic Flaws | IDOR, Mass Assignment, Missing authorization, Business logic issues |
+| Category | Examples |
+|---|---|
+| **Secrets & Credentials** | API keys, hardcoded passwords, tokens, AWS credentials, private keys |
+| **Injection Vulnerabilities** | SQL injection, XSS, command injection, path traversal |
+| **Misconfigurations** | Exposed `.env` files, debug mode in production, CORS wildcards, insecure cookies |
+| **Code Structure Issues** | Unsafe `eval()`, `exec()`, `pickle`, dynamic code execution, dangerous subprocess calls |
+| **Access Control Flaws** | IDOR patterns, missing authentication checks, mass assignment |
+
+Results are scored from 0 to 100 using a weighted algorithm with diminishing penalties, so large codebases are assessed fairly.
 
 ---
 
-## Stack
+## How it works
 
-**Backend** — Python, FastAPI, Celery, Redis
-
-**Frontend** — React, TypeScript, TailwindCSS, Vite
-
-**Database** — Supabase (PostgreSQL + Realtime + Auth)
-
-**AI** — Anthropic Claude for deep vulnerability analysis and automated test generation
-
-**Infrastructure** — Docker Compose
-
----
-
-## Architecture
-Frontend  ──────────────────►  FastAPI Backend
-React + Supabase Realtime        Auth · Routes · Reports
-│
-Celery + Redis Queue
-│
-┌─────────▼──────────┐
-│   Scanner Engine    │
-│                     │
-│  Pattern Scanner    │
-│  AST Analyzer       │
-│  AI Analyzer        │
-│  Security Scorer    │
-└─────────────────────┘
-│
-Supabase DB
-Results · History · RLS
+```
+User submits GitHub URL
+        │
+        ▼
+FastAPI receives request → queues Celery task → returns scan_id immediately
+        │
+        ▼
+Celery worker picks up the task
+        │
+        ├─ GitPython clones the repository into a temp directory
+        │
+        ├─ Layer 1: Pattern Scanner (regex across all files)
+        ├─ Layer 2: AST Analyzer (Python Abstract Syntax Tree parsing)
+        └─ Layer 3: Rule Engine (logic-based detection)
+                │
+                ▼
+        Scorer calculates security score
+                │
+                ▼
+        Results saved to Supabase (PostgreSQL)
+                │
+                ▼
+Frontend receives real-time updates via Supabase Realtime + polling fallback
+                │
+                ▼
+        Full report rendered with expandable vulnerability cards
+```
 
 ---
 
-## Security model
+## Tech stack
 
-- Only public GitHub URLs accepted — SSRF prevented at validation
-- Cloned repositories are deleted immediately after scanning
-- No code from scanned repos is ever executed
-- Row Level Security enforced at database level — users only see their own scans
-- Every API endpoint requires JWT authentication
+| Technology | Role |
+|---|---|
+| Python 3.11 | Backend language and scanner engine |
+| FastAPI | REST API with automatic OpenAPI docs |
+| Celery | Asynchronous task queue (scan runs in background) |
+| Redis | Message broker between API and worker |
+| Supabase | PostgreSQL database, authentication, Realtime, RLS |
+| React 18 + TypeScript | Frontend — component-based, type-safe |
+| Vite | Frontend build tool |
+| Docker Compose | Orchestrates API, worker, Redis as isolated containers |
 
 ---
 
-<div align="center">
+---
 
-<br />
+## Roadmap
 
-*College graduation project — built with ☠️*
+- [x] Pattern-based detection
+- [x] AST code structure analysis
+- [x] Real-time scan progress via Supabase Realtime
+- [x] Authentication (email/password + GitHub OAuth + Google OAuth)
+- [x] Scan history with delete support
+- [x] Light/dark theme
+- [ ] AI layer — Anthropic Claude integration (next semester)
 
-</div>
+---
+
+*Named after the hacker collective from the Watch Dogs series — exposing vulnerabilities before someone with bad intentions does.*
