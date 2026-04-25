@@ -19,14 +19,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Load initial session
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setUser(data.session?.user ?? null)
       setLoading(false)
     })
 
-    // Subscribe to auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
@@ -47,12 +45,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    // Clear state immediately so all components update at once
-    // before the async Supabase call completes — this fixes the
-    // "redirected but still looks logged in" race condition.
+    // 1. Clear React state immediately so UI updates at once
     setUser(null)
     setSession(null)
-    await supabase.auth.signOut({ scope: 'local' })
+
+    // 2. Revoke the refresh token on Supabase's server
+    await supabase.auth.signOut({ scope: 'global' })
+
+    // 3. Manually wipe every Supabase key from localStorage.
+    //    This is the critical step that the previous version was missing.
+    //    Supabase caches the session in localStorage under keys like
+    //    "sb-xxxx-auth-token". On F5, getSession() reads from this cache
+    //    first and successfully re-authenticates with it before checking
+    //    whether the server-side token was revoked.
+    //    Clearing these keys makes the cache empty, so after F5 there is
+    //    nothing to restore and the user stays logged out.
+    Object.keys(localStorage)
+      .filter(key => key.startsWith('sb-'))
+      .forEach(key => localStorage.removeItem(key))
   }
 
   return (
