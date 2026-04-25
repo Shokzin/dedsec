@@ -19,15 +19,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Load initial session
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setUser(data.session?.user ?? null)
       setLoading(false)
     })
 
+    // Subscribe to auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
+      setLoading(false)
     })
 
     return () => listener.subscription.unsubscribe()
@@ -44,7 +47,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    // Clear state immediately so all components update at once
+    // before the async Supabase call completes — this fixes the
+    // "redirected but still looks logged in" race condition.
+    setUser(null)
+    setSession(null)
+    await supabase.auth.signOut({ scope: 'local' })
   }
 
   return (

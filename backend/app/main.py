@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import structlog
 from app.core.config import get_settings
 from app.api.routes import scans
-import structlog
+from app.api.routes.auth_routes import router as auth_router
 
 logger = structlog.get_logger()
 settings = get_settings()
@@ -15,6 +16,7 @@ app = FastAPI(
     redoc_url=None,
 )
 
+# ── CORS ──────────────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -23,9 +25,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(scans.router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
 
-
-@app.get("/health")
-async def health_check() -> dict:
+# ── Health ────────────────────────────────────────────────────────────────────
+@app.get("/health", tags=["health"])
+async def health_check():
     return {"status": "ok", "environment": settings.environment}
+
+
+@app.get("/", tags=["health"])
+async def root():
+    return {"message": "DedSec Vulnerability Scanner API", "version": "1.0.0"}

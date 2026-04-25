@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { useTheme, getTokens } from '../hooks/useTheme'
 import { useAuth } from '../hooks/useAuth'
@@ -33,18 +34,110 @@ function ScoreBadge({ score }: { score: number | null }) {
   return <span style={{ fontSize: 15, fontWeight: 600, color, fontFamily: "'DM Mono', monospace" }}>{score}</span>
 }
 
-function ScanRow({ scan, onClick, t }: { scan: ScanListItem; onClick: () => void; t: ReturnType<typeof getTokens> }) {
+// ── Delete button with inline confirmation ─────────────────────────────────────
+function DeleteButton({
+  scanId, onDelete, t
+}: {
+  scanId: string
+  onDelete: (id: string) => Promise<void>
+  t: ReturnType<typeof getTokens>
+}) {
+  const [confirming, setConfirming] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setConfirming(true)
+  }
+
+  const handleConfirm = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setLoading(true)
+    await onDelete(scanId)
+    setLoading(false)
+    setConfirming(false)
+  }
+
+  const handleCancel = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setConfirming(false)
+  }
+
+  if (confirming) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={e => e.stopPropagation()}>
+        <span style={{ fontSize: 11, color: t.textMuted }}>Remove?</span>
+        <button onClick={handleConfirm} disabled={loading} style={{
+          fontSize: 11, fontWeight: 600, color: '#dc2626',
+          background: 'none', border: `1px solid #fecaca`, borderRadius: 4,
+          padding: '3px 8px', cursor: 'pointer', fontFamily: 'inherit',
+          opacity: loading ? 0.6 : 1,
+        }}>
+          {loading ? '...' : 'Yes'}
+        </button>
+        <button onClick={handleCancel} style={{
+          fontSize: 11, color: t.textMuted, background: 'none',
+          border: `1px solid ${t.border}`, borderRadius: 4,
+          padding: '3px 8px', cursor: 'pointer', fontFamily: 'inherit',
+        }}>
+          No
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <button onClick={handleClick} title="Remove from history" style={{
+      width: 28, height: 28, borderRadius: 6,
+      background: 'none', border: `1px solid transparent`,
+      cursor: 'pointer', color: t.textMuted,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      transition: 'all 0.15s', flexShrink: 0,
+    }}
+      onMouseEnter={e => {
+        e.currentTarget.style.background = '#fee2e2'
+        e.currentTarget.style.borderColor = '#fecaca'
+        e.currentTarget.style.color = '#dc2626'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = 'none'
+        e.currentTarget.style.borderColor = 'transparent'
+        e.currentTarget.style.color = t.textMuted
+      }}
+    >
+      {/* Trash icon */}
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14H6L5 6"/>
+        <path d="M10 11v6M14 11v6"/>
+        <path d="M9 6V4h6v2"/>
+      </svg>
+    </button>
+  )
+}
+
+// ── Scan row ───────────────────────────────────────────────────────────────────
+function ScanRow({
+  scan, onClick, onDelete, t
+}: {
+  scan: ScanListItem
+  onClick: () => void
+  onDelete: (id: string) => Promise<void>
+  t: ReturnType<typeof getTokens>
+}) {
   const repoName = scan.repo_url.replace('https://github.com/', '')
   const [owner, repo] = repoName.split('/')
   const date = new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const time = new Date(scan.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <tr onClick={onClick} style={{ cursor: 'pointer', transition: 'background 0.15s' }}
+    <tr
+      onClick={onClick}
+      style={{ cursor: 'pointer', transition: 'background 0.15s' }}
       onMouseEnter={e => (e.currentTarget.style.background = t.bgTertiary)}
       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
     >
-      <td style={{ padding: '16px 20px', borderBottom: `1px solid ${t.borderLight}` }}>
+      <td style={{ padding: '14px 20px', borderBottom: `1px solid ${t.borderLight}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: t.bgTertiary, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 16 16" fill={t.textMuted}>
@@ -59,27 +152,34 @@ function ScanRow({ scan, onClick, t }: { scan: ScanListItem; onClick: () => void
           </div>
         </div>
       </td>
-      <td style={{ padding: '16px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'center' }}>
+      <td style={{ padding: '14px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'center' }}>
         <StatusPill status={scan.status} />
       </td>
-      <td style={{ padding: '16px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'center' }}>
+      <td style={{ padding: '14px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'center' }}>
         <ScoreBadge score={scan.security_score} />
       </td>
-      <td style={{ padding: '16px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'center' }}>
-        {scan.status === 'completed' ? <span style={{ fontSize: 13, color: t.textSecondary }}>{scan.total_vulnerabilities}</span> : <span style={{ fontSize: 13, color: t.textMuted }}>—</span>}
+      <td style={{ padding: '14px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'center' }}>
+        {scan.status === 'completed'
+          ? <span style={{ fontSize: 13, color: t.textSecondary }}>{scan.total_vulnerabilities}</span>
+          : <span style={{ fontSize: 13, color: t.textMuted }}>—</span>}
       </td>
-      <td style={{ padding: '16px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'right' }}>
-        <span style={{ fontSize: 13, color: t.textMuted }}>→</span>
+      <td style={{ padding: '14px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'right' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+          <DeleteButton scanId={scan.scan_id} onDelete={onDelete} t={t} />
+          <span style={{ fontSize: 13, color: t.textMuted }}>→</span>
+        </div>
       </td>
     </tr>
   )
 }
 
+// ── Dashboard ──────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { isDark } = useTheme()
   const t = getTokens(isDark)
+  const queryClient = useQueryClient()
 
   const { data: scans, isLoading, isError } = useQuery({
     queryKey: ['scans'],
@@ -88,18 +188,33 @@ export default function DashboardPage() {
   })
 
   const completed = scans?.filter(s => s.status === 'completed') ?? []
-  const avgScore = completed.length ? Math.round(completed.reduce((a, b) => a + (b.security_score ?? 0), 0) / completed.length) : null
+  const avgScore = completed.length
+    ? Math.round(completed.reduce((a, b) => a + (b.security_score ?? 0), 0) / completed.length)
+    : null
   const totalVulns = scans?.reduce((a, b) => a + b.total_vulnerabilities, 0) ?? 0
   const running = scans?.filter(s => s.status === 'running' || s.status === 'queued') ?? []
 
-  // Always use display_name from metadata first, then fall back to email username
-  // This ensures the greeting updates immediately after profile changes
   const displayName = user?.user_metadata?.display_name
     || user?.email?.split('@')[0]
     || 'there'
 
+  const handleDeleteScan = async (scanId: string) => {
+    try {
+      await scansApi.deleteScan(scanId)
+      // Optimistically remove from cache so the UI updates immediately
+      queryClient.setQueryData<ScanListItem[]>(['scans'], old =>
+        old?.filter(s => s.scan_id !== scanId) ?? []
+      )
+    } catch (err) {
+      console.error('Failed to delete scan:', err)
+      // Re-fetch on error to restore correct state
+      queryClient.invalidateQueries({ queryKey: ['scans'] })
+    }
+  }
+
   return (
     <AppLayout>
+      {/* ── Header ── */}
       <div style={{ marginBottom: 40, animation: 'fadeIn 0.5s ease forwards' }}>
         <p style={{ fontSize: 13, color: t.textMuted, marginBottom: 6 }}>
           Welcome back, {displayName}
@@ -123,6 +238,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* ── Stats ── */}
       {scans && scans.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 40 }}>
           {[
@@ -145,6 +261,7 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* ── Running notice ── */}
       {running.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '12px 16px', marginBottom: 24 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3b82f6', animation: 'pulse 1.5s infinite', flexShrink: 0 }} />
@@ -152,6 +269,7 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* ── Loading ── */}
       {isLoading && (
         <div style={{ textAlign: 'center', padding: '60px 0', color: t.textMuted }}>
           <div style={{ width: 28, height: 28, border: `2px solid ${t.border}`, borderTopColor: t.text, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
@@ -159,12 +277,14 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* ── Error ── */}
       {isError && (
         <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 8, padding: '16px 20px' }}>
           <p style={{ fontSize: 14, color: '#dc2626' }}>Failed to load scans. Make sure the API is running at {import.meta.env.VITE_API_URL}.</p>
         </div>
       )}
 
+      {/* ── Empty state ── */}
       {!isLoading && !isError && scans?.length === 0 && (
         <div style={{ border: `1px dashed ${t.border}`, borderRadius: 12, padding: '64px 40px', textAlign: 'center' }}>
           <div style={{ width: 48, height: 48, borderRadius: 12, background: t.bgTertiary, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 20 }}>🔍</div>
@@ -176,13 +296,19 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* ── Table ── */}
       {!isLoading && scans && scans.length > 0 && (
         <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, overflow: 'hidden', animation: 'fadeIn 0.5s ease forwards' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: t.bgSecondary }}>
                 {['Repository', 'Status', 'Score', 'Findings', ''].map((h, i) => (
-                  <th key={h || i} style={{ padding: '12px 20px', fontSize: 11, fontWeight: 600, color: t.textMuted, textAlign: i === 0 ? 'left' : i === 4 ? 'right' : 'center', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: `1px solid ${t.border}` }}>
+                  <th key={h + i} style={{
+                    padding: '12px 20px', fontSize: 11, fontWeight: 600, color: t.textMuted,
+                    textAlign: i === 0 ? 'left' : i === 4 ? 'right' : 'center',
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
+                    borderBottom: `1px solid ${t.border}`,
+                  }}>
                     {h}
                   </th>
                 ))}
@@ -190,7 +316,13 @@ export default function DashboardPage() {
             </thead>
             <tbody>
               {scans.map(scan => (
-                <ScanRow key={scan.scan_id} scan={scan} t={t} onClick={() => navigate(`/report/${scan.scan_id}`)} />
+                <ScanRow
+                  key={scan.scan_id}
+                  scan={scan}
+                  t={t}
+                  onClick={() => navigate(`/report/${scan.scan_id}`)}
+                  onDelete={handleDeleteScan}
+                />
               ))}
             </tbody>
           </table>
