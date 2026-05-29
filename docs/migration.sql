@@ -1,0 +1,63 @@
+-- =============================================
+--  DedSec — Supabase Database Migration
+--  Run this in your Supabase SQL Editor
+-- =============================================
+
+-- Scans table
+create table scans (
+  id uuid primary key,
+  user_id uuid references auth.users(id) on delete cascade,
+  repo_url text not null,
+  status text not null default 'queued',
+  security_score int,
+  total_vulnerabilities int default 0,
+  critical_count int default 0,
+  high_count int default 0,
+  medium_count int default 0,
+  low_count int default 0,
+  scanned_files int default 0,
+  scan_duration_seconds float,
+  error_message text,
+  created_at timestamptz default now(),
+  completed_at timestamptz
+);
+
+-- Vulnerabilities table
+create table vulnerabilities (
+  id uuid primary key,
+  scan_id uuid references scans(id) on delete cascade,
+  type text not null,
+  title text not null,
+  description text,
+  severity text not null,
+  file_path text not null,
+  line_start int,
+  line_end int,
+  code_snippet text,
+  recommendation text,
+  cwe_id text,
+  owasp_category text
+);
+
+-- Realtime progress table
+create table scan_progress (
+  scan_id uuid primary key references scans(id) on delete cascade,
+  message text,
+  progress_pct int default 0,
+  partial_findings int default 0,
+  updated_at timestamptz default now()
+);
+
+-- Row Level Security
+alter table scans enable row level security;
+alter table vulnerabilities enable row level security;
+
+create policy "Users see own scans"
+  on scans for all using (auth.uid() = user_id);
+
+create policy "Users see own vulnerabilities"
+  on vulnerabilities for all
+  using (scan_id in (select id from scans where user_id = auth.uid()));
+
+-- Enable Realtime
+alter publication supabase_realtime add table scan_progress;

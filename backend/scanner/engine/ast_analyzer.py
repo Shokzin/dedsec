@@ -1,0 +1,162 @@
+import ast
+import uuid
+import os
+from pathlib import Path
+from scanner.engine.finding import Finding
+
+
+class ASTAnalyzer:
+    def analyze(self, repo_path: str, file_list: list[str]) -> list[Finding]:
+        findings = []
+        for rel_path in file_list:
+            if not rel_path.endswith(".py"):
+                continue
+            abs_path = os.path.join(repo_path, rel_path)
+            try:
+                source = Path(abs_path).read_text(errors="replace")
+                tree = ast.parse(source, filename=rel_path)
+                visitor = VulnVisitor(rel_path)
+                visitor.visit(tree)
+                findings.extend(visitor.findings)
+            except (SyntaxError, OSError):
+                continue
+        return findings
+
+
+class VulnVisitor(ast.NodeVisitor):
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self.findings: list[Finding] = []
+
+    def visit_Call(self, node: ast.Call) -> None:
+        self._check_pickle(node)
+        self._check_yaml_load(node)
+        self._check_eval(node)
+        self._check_subprocess_shell(node)
+        self.generic_visit(node)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self._check_mass_assignment(node)
+        self._check_missing_auth_decorator(node)
+        self.generic_visit(node)
+
+    def _check_pickle(self, node: ast.Call) -> None:
+        if self._is_call(node, "pickle", "loads"):
+            self._add(
+                node,
+                "unsafe_deserialization",
+                "Unsafe Deserialization with pickle.loads()",
+                "critical", "CWE-502",
+                "A08:2021 – Software and Data Integrity Failures",
+                "Never deserialize untrusted data with pickle. Use JSON or a safe alternative.",
+            )
+
+    def _check_yaml_load(self, node: ast.Call) -> None:
+        if self._is_call(node, "yaml", "load"):
+            args = node.args + [kw.value for kw in node.keywords]
+            has_safe_loader = any(
+                isinstance(a, ast.Attribute) and "SafeLoader" in ast.unparse(a)
+                for a in args
+            )
+            if not has_safe_loader:
+                self._add(
+                    node,
+                    "unsafe_yaml_load",
+                    "Unsafe yaml.load() Without SafeLoader",
+                    "high", "CWE-502",
+                    "A08:2021 – Software and Data Integrity Failures",
+                    "Use yaml.safe_load() or yaml.load(data, Loader=yaml.SafeLoader).",
+                )
+
+    def _check_eval(self, node: ast.Call) -> None:
+        if isinstance(node.func, ast.Name) and node.func.id in ("eval", "exec", "compile"):
+            if node.args and not isinstance(node.args[0], ast.Constant):
+                self._add(
+                    node,
+                    "code_injection",
+                    f"Dynamic Code Execution via {node.func.id}()",
+                    "critical", "CWE-94",
+                    "A03:2021 – Injection",
+                    f"Avoid {node.func.id}() with dynamic input. Refactor to use explicit logic.",
+                )
+
+    def _check_subprocess_shell(self, node: ast.Call) -> None:
+        if self._is_call(node, "subprocess", ("call", "run", "Popen", "check_output")):
+            for kw in node.keywords:
+                if (
+                    kw.arg == "shell"
+                    and isinstance(kw.value, ast.Constant)
+                    and kw.value.value is True
+                ):
+                    self._add(
+                        node,
+                        "command_injection_shell",
+                        "subprocess Called with shell=True",
+                        "high", "CWE-78",
+                        "A03:2021 – Injection",
+                        "Use shell=False and pass arguments as a list instead of a string.",
+                    )
+
+    def _check_mass_assignment(self, node: ast.FunctionDef) -> None:
+        for child in ast.walk(node):
+            if isinstance(child, ast.Call):
+                for kw in child.keywords:
+                    if kw.arg is None and isinstance(kw.value, ast.Call):
+                        func_str = ast.unparse(kw.value.func)
+                        if any(term in func_str for term in ["json", "dict", "form", "body"]):
+                            self._add(
+                                child,
+                                "mass_assignment",
+                                "Potential Mass Assignment Vulnerability",
+                                "high", "CWE-915",
+                                "A03:2021 – Injection",
+                                "Use explicit Pydantic models instead of unpacking "
+                                "request data directly into model constructors.",
+                            )
+                            break
+
+    def _check_missing_auth_decorator(self, node: ast.FunctionDef) -> None:
+        decorator_names = [ast.unparse(d) for d in node.decorator_list]
+        is_route = any(
+            any(m in d for m in ["get", "post", "put", "delete", "patch"])
+            for d in decorator_names
+        )
+        if not is_route:
+            return
+        has_id_param = any(
+            arg.arg in ("user_id", "account_id", "id") for arg in node.args.args
+        )
+        has_auth = any("Depends" in d or "current_user" in d for d in decorator_names)
+        if has_id_param and not has_auth:
+            self._add(
+                node,
+                "potential_idor",
+                "Potential IDOR — Route with ID Param Lacks Auth Dependency",
+                "high", "CWE-639",
+                "A01:2021 – Broken Access Control",
+                "Verify the authenticated user owns the requested resource. "
+                "Add Depends(get_current_user) and check user_id matches.",
+            )
+
+    def _is_call(self, node: ast.Call, module: str, func) -> bool:
+        funcs = (func,) if isinstance(func, str) else func
+        if isinstance(node.func, ast.Attribute):
+            if isinstance(node.func.value, ast.Name):
+                return node.func.value.id == module and node.func.attr in funcs
+        return False
+
+    def _add(self, node, vuln_type, title, severity, cwe, owasp, rec) -> None:
+        self.findings.append(Finding(
+            id=str(uuid.uuid4()),
+            type=vuln_type,
+            title=title,
+            description=f"Detected {title} at line {node.lineno} in {self.file_path}",
+            severity=severity,
+            file_path=self.file_path,
+            line_start=node.lineno,
+            line_end=getattr(node, "end_lineno", node.lineno),
+            code_snippet=f"Line {node.lineno}",
+            recommendation=rec,
+            cwe_id=cwe,
+            owasp_category=owasp,
+        ))

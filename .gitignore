@@ -1,0 +1,42 @@
+# Environment files — never commit these
+.env
+.env.*
+.env.example
+!.env.example
+.env.local
+.env.production
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+*.pem
+*.key
+.env.staging
+testes/.env
+testes/.env.*
+testes/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Docker
+*.log
+
+# Scan temp files
+/tmp/scans/
+
+# VSCode
+.vscode/
+
+
+
+!frontend/.env.example
+*.pem
+*.key

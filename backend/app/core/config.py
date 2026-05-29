@@ -1,0 +1,29 @@
+from pydantic_settings import BaseSettings
+from functools import lru_cache
+
+
+class Settings(BaseSettings):
+    environment: str = "development"
+    secret_key: str = "change-me"
+    allowed_origins: list[str] = ["http://localhost:5173"]
+
+    supabase_url: str
+    supabase_anon_key: str
+    supabase_service_role_key: str
+
+    redis_url: str = "redis://redis:6379/0"
+
+    scan_tmp_dir: str = "/tmp/scans"
+    max_repo_size_mb: int = 100
+    scan_timeout_seconds: int = 300
+
+    anthropic_api_key: str
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = False
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

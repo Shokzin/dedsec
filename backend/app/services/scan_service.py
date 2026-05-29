@@ -1,0 +1,102 @@
+import uuid
+from datetime import datetime, timezone
+from supabase import Client
+from app.models.scan import ScanCreateRequest, ScanReport, ScanListItem, ScanStatus
+import structlog
+
+logger = structlog.get_logger()
+
+
+class ScanService:
+    def __init__(self, db: Client, user_id: str):
+        self.db = db
+        self.user_id = user_id
+
+    def create_scan(self, request: ScanCreateRequest) -> dict:
+        from worker.tasks import run_scan_task
+        scan_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+
+        record = {
+            "id": scan_id,
+            "user_id": self.user_id,
+            "repo_url": request.repo_url,
+            "status": ScanStatus.QUEUED.value,
+            "created_at": now,
+        }
+
+        self.db.table("scans").insert(record).execute()
+        logger.info("scan_queued", scan_id=scan_id, repo_url=request.repo_url)
+        run_scan_task.delay(scan_id, request.repo_url)
+        return {"scan_id": scan_id, "status": ScanStatus.QUEUED.value}
+
+    def get_scan(self, scan_id: str) -> ScanReport | None:
+        response = (
+            self.db.table("scans")
+            .select("*, vulnerabilities(*)")
+            .eq("id", scan_id)
+            .eq("user_id", self.user_id)
+            .maybe_single()
+            .execute()
+        )
+        if not response.data:
+            return None
+        return self._row_to_report(response.data)
+
+    def list_scans(self, limit: int = 20, offset: int = 0) -> list[ScanListItem]:
+        response = (
+            self.db.table("scans")
+            .select("id, repo_url, status, security_score, total_vulnerabilities, created_at")
+            .eq("user_id", self.user_id)
+            .order("created_at", desc=True)
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+        return [
+            ScanListItem(
+                scan_id=row["id"],
+                repo_url=row["repo_url"],
+                status=row["status"],
+                security_score=row.get("security_score"),
+                total_vulnerabilities=row.get("total_vulnerabilities", 0),
+                created_at=row["created_at"],
+            )
+            for row in (response.data or [])
+        ]
+
+    def _row_to_report(self, row: dict) -> ScanReport:
+        from app.models.scan import VulnerabilityItem, SeverityLevel
+        vulns = [
+            VulnerabilityItem(
+                id=v["id"],
+                type=v["type"],
+                title=v["title"],
+                description=v["description"],
+                severity=SeverityLevel(v["severity"]),
+                file_path=v["file_path"],
+                line_start=v["line_start"],
+                line_end=v["line_end"],
+                code_snippet=v["code_snippet"],
+                recommendation=v["recommendation"],
+                cwe_id=v.get("cwe_id"),
+                owasp_category=v.get("owasp_category"),
+            )
+            for v in (row.get("vulnerabilities") or [])
+        ]
+        return ScanReport(
+            scan_id=row["id"],
+            repo_url=row["repo_url"],
+            status=ScanStatus(row["status"]),
+            security_score=row.get("security_score"),
+            total_vulnerabilities=row.get("total_vulnerabilities", 0),
+            critical_count=row.get("critical_count", 0),
+            high_count=row.get("high_count", 0),
+            medium_count=row.get("medium_count", 0),
+            low_count=row.get("low_count", 0),
+            vulnerabilities=vulns,
+            scanned_files=row.get("scanned_files", 0),
+            scan_duration_seconds=row.get("scan_duration_seconds"),
+            created_at=row["created_at"],
+            completed_at=row.get("completed_at"),
+            error_message=row.get("error_message"),
+        )
