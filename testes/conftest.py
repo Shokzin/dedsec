@@ -2,6 +2,10 @@ import pytest
 import httpx
 import os
 import time
+from dotenv import load_dotenv
+import os
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
 BASE_URL  = os.getenv("DEDSEC_API_URL")
 SUP_URL   = os.getenv("SUPABASE_URL")
