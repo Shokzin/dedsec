@@ -228,7 +228,7 @@ export default function ReportPage() {
               </p>
             )}
           </div>
-          {report.security_score !== null && <ScoreRing score={report.security_score} t={t} />}
+          {report.score !== null && <ScoreRing score={report.score} t={t} />}
         </div>
 
         {/* Running */}

@@ -8,7 +8,7 @@ export interface ScanListItem {
   scan_id: string
   repo_url: string
   status: 'queued' | 'running' | 'completed' | 'failed'
-  security_score: number | null
+  score: number | null
   total_vulnerabilities: number
   created_at: string
 }

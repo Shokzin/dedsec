@@ -156,7 +156,7 @@ function ScanRow({
         <StatusPill status={scan.status} />
       </td>
       <td style={{ padding: '14px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'center' }}>
-        <ScoreBadge score={scan.security_score} />
+        <ScoreBadge score={scan.score} />
       </td>
       <td style={{ padding: '14px 20px', borderBottom: `1px solid ${t.borderLight}`, textAlign: 'center' }}>
         {scan.status === 'completed'
@@ -189,7 +189,7 @@ export default function DashboardPage() {
 
   const completed = scans?.filter(s => s.status === 'completed') ?? []
   const avgScore = completed.length
-    ? Math.round(completed.reduce((a, b) => a + (b.security_score ?? 0), 0) / completed.length)
+    ? Math.round(completed.reduce((a, b) => a + (b.score ?? 0), 0) / completed.length)
     : null
   const totalVulns = scans?.reduce((a, b) => a + b.total_vulnerabilities, 0) ?? 0
   const running = scans?.filter(s => s.status === 'running' || s.status === 'queued') ?? []
