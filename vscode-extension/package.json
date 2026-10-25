@@ -1,0 +1,39 @@
+{
+  "name": "dedsec",
+  "displayName": "DedSec",
+  "description": "Mostra vulnerabilidades de segurança direto no editor, antes do commit.",
+  "version": "0.1.0",
+  "publisher": "dedsec",
+  "license": "UNLICENSED",
+  "engines": { "vscode": "^1.80.0" },
+  "categories": ["Linters", "Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "dedsec.scanFile", "title": "DedSec: Analisar arquivo atual" },
+      { "command": "dedsec.scanWorkspace", "title": "DedSec: Analisar projeto inteiro" }
+    ],
+    "configuration": {
+      "title": "DedSec",
+      "properties": {
+        "dedsec.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Comando do Python 3.10+ (ex.: python, py). Vazio = detectar automaticamente."
+        },
+        "dedsec.scannerDir": {
+          "type": "string",
+          "default": "",
+          "description": "Pasta que contém o pacote 'scanner' (ex.: backend). Vazio = detectar automaticamente."
+        },
+        "dedsec.runOn": {
+          "type": "string",
+          "enum": ["type", "save"],
+          "default": "type",
+          "description": "Quando analisar: enquanto digita ('type') ou só ao salvar ('save')."
+        }
+      }
+    }
+  }
+}
