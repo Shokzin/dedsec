@@ -154,6 +154,8 @@ export default function ReportPage() {
   const t = getTokens(isDark)
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all')
   const [search, setSearch] = useState('')
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
 
   const { data: report, isLoading, isError } = useQuery({
     queryKey: ['scan', scanId],
@@ -173,6 +175,22 @@ export default function ReportPage() {
     })
     .sort((a, b) => (SEV[a.severity as Severity]?.order ?? 4) - (SEV[b.severity as Severity]?.order ?? 4))
     ?? []
+
+  // O gerador de PDF é carregado só quando o botão é clicado (mantém o site leve)
+  async function handleExport() {
+    if (!report) return
+    setExporting(true)
+    setExportError(null)
+    try {
+      const { exportReportPdf } = await import('../lib/exportPdf')
+      exportReportPdf(report)
+    } catch (err) {
+      console.error('PDF export failed', err)
+      setExportError('Could not generate the PDF. Please try again.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   if (isLoading) return (
     <AppLayout>
@@ -226,6 +244,28 @@ export default function ReportPage() {
               <p style={{ fontSize: 13, color: t.textMuted, marginTop: 6 }}>
                 {report.scanned_files} files · {report.scan_duration_seconds?.toFixed(1)}s
               </p>
+            )}
+            {report.status === 'completed' && (
+              <div style={{ marginTop: 14 }}>
+                <button
+                  onClick={handleExport}
+                  disabled={exporting}
+                  style={{
+                    background: 'transparent', color: t.text,
+                    border: `1.5px solid ${t.border}`, borderRadius: 6,
+                    padding: '8px 16px', fontSize: 13, fontWeight: 500,
+                    fontFamily: 'inherit', cursor: exporting ? 'default' : 'pointer',
+                    opacity: exporting ? 0.6 : 1, transition: 'border-color 0.2s',
+                  }}
+                  onMouseEnter={e => { if (!exporting) e.currentTarget.style.borderColor = t.text }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = t.border }}
+                >
+                  {exporting ? 'Generating PDF...' : 'Export PDF'}
+                </button>
+                {exportError && (
+                  <p style={{ fontSize: 12, color: '#dc2626', marginTop: 8 }}>{exportError}</p>
+                )}
+              </div>
             )}
           </div>
           {report.score !== null && <ScoreRing score={report.score} t={t} />}
