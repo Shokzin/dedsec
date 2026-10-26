@@ -480,19 +480,38 @@ PATTERNS = [
 ]
 
 
+def _effective_suffix(path: Path) -> str:
+    """
+    Extensão usada para filtrar regras.
+
+    Path(".env").suffix devolve "" (dotfile sem extensão), então arquivos
+    como ".env" e ".env.local" nunca casavam com ".env" em SCANNABLE_EXTENSIONS.
+    """
+    name = path.name.lower()
+    if name == ".env" or name.startswith(".env."):
+        return ".env"
+    return path.suffix.lower()
+
+
 class PatternScanner:
     """
     Pattern-based vulnerability scanner.
 
-    Matches the original interface used by pipeline.py:
-        scanner = PatternScanner()
-        findings = scanner.scan(repo_path, file_list)
+    Dois modos de uso:
+
+    1) Repositório em disco (usado pelo pipeline web, interface original):
+           findings = PatternScanner().scan(repo_path, file_list)
+
+    2) Conteúdo em memória (CLI, extensão do VS Code, hook de pre-commit):
+           findings = PatternScanner().scan_content(content, "src/app.py")
+       Não toca no disco: serve para buffer não salvo ou versão staged do git.
     """
 
     def __init__(self) -> None:
         # No constructor arguments — repo_path is passed to scan()
         pass
 
+    # ── Modo 1: disco ──────────────────────────────────────────────────────────
     def scan(
         self,
         repo_path: Path,
@@ -533,20 +552,39 @@ class PatternScanner:
         return all_findings
 
     def _scan_file(self, file_path: Path, repo_root: Path) -> List[Finding]:
-        suffix = file_path.suffix.lower()
-        if suffix not in SCANNABLE_EXTENSIONS:
+        if _effective_suffix(file_path) not in SCANNABLE_EXTENSIONS:
             return []
         try:
             content = file_path.read_text(encoding="utf-8", errors="replace")
         except Exception:
             return []
 
-        lines = content.splitlines()
         try:
             relative_path = str(file_path.relative_to(repo_root))
         except ValueError:
             relative_path = str(file_path)
 
+        return self.scan_content(content, relative_path)
+
+    # ── Modo 2: memória ────────────────────────────────────────────────────────
+    def scan_content(self, content: str, file_path: str) -> List[Finding]:
+        """
+        Scan a string of source code.
+
+        Args:
+            content:   Full text of the file (saved, unsaved or staged).
+            file_path: Path used for extension filtering and reported in the
+                       findings. Prefer a path relative to the project root.
+        """
+        path = Path(file_path)
+        if any(part in SKIP_DIRS for part in path.parts):
+            return []
+
+        suffix = _effective_suffix(path)
+        if suffix not in SCANNABLE_EXTENSIONS:
+            return []
+
+        lines = content.splitlines()
         findings: List[Finding] = []
         seen: set = set()
 
@@ -556,7 +594,7 @@ class PatternScanner:
             for match in rule["pattern"].finditer(content):
                 line_start = content.count("\n", 0, match.start()) + 1
                 line_end = line_start + match.group().count("\n")
-                key = (rule["title"], relative_path, line_start)
+                key = (rule["title"], file_path, line_start)
                 if key in seen:
                     continue
                 seen.add(key)
@@ -571,7 +609,7 @@ class PatternScanner:
                     description=rule["description"],
                     severity=rule["severity"],
                     type=rule["type"],
-                    file_path=relative_path,
+                    file_path=file_path,
                     line_start=line_start,
                     line_end=line_end,
                     code_snippet=code_snippet,

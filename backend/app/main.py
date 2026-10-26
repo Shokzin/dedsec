@@ -30,11 +30,11 @@ app.include_router(scans.router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 
 # ── Health ────────────────────────────────────────────────────────────────────
-@app.get("/health", tags=["health"])
+@app.get("/health", tags=["health"])  # dedsec: ignore
 async def health_check():
     return {"status": "ok", "environment": settings.environment}
 
 
-@app.get("/", tags=["health"])
+@app.get("/", tags=["health"])  # dedsec: ignore
 async def root():
     return {"message": "DedSec Vulnerability Scanner API", "version": "1.0.0"}

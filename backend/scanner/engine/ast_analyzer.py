@@ -6,6 +6,20 @@ from scanner.engine.finding import Finding
 
 
 class ASTAnalyzer:
+    """
+    Análise estrutural (AST) de código Python.
+
+    Dois modos de uso:
+
+    1) Repositório em disco (pipeline web, interface original):
+           ASTAnalyzer().analyze(repo_path, file_list)
+
+    2) Conteúdo em memória (CLI, extensão do VS Code, hook de pre-commit):
+           ASTAnalyzer().analyze_content(content, "src/app.py")
+       Se o código tiver erro de sintaxe (comum enquanto se digita),
+       devolve lista vazia em vez de lançar exceção.
+    """
+
     def analyze(self, repo_path: str, file_list: list[str]) -> list[Finding]:
         findings = []
         for rel_path in file_list:
@@ -14,18 +28,29 @@ class ASTAnalyzer:
             abs_path = os.path.join(repo_path, rel_path)
             try:
                 source = Path(abs_path).read_text(errors="replace")
-                tree = ast.parse(source, filename=rel_path)
-                visitor = VulnVisitor(rel_path)
-                visitor.visit(tree)
-                findings.extend(visitor.findings)
-            except (SyntaxError, OSError):
+            except OSError:
                 continue
+            findings.extend(self.analyze_content(source, rel_path))
         return findings
+
+    def analyze_content(self, content: str, file_path: str) -> list[Finding]:
+        if not file_path.endswith(".py"):
+            return []
+        try:
+            tree = ast.parse(content, filename=file_path)
+        except (SyntaxError, ValueError):
+            return []
+        visitor = VulnVisitor(file_path, content.splitlines())
+        visitor.visit(tree)
+        return visitor.findings
 
 
 class VulnVisitor(ast.NodeVisitor):
-    def __init__(self, file_path: str):
+    MAX_SNIPPET_LINES = 5
+
+    def __init__(self, file_path: str, source_lines: list[str] | None = None):
         self.file_path = file_path
+        self.source_lines = source_lines or []
         self.findings: list[Finding] = []
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -145,6 +170,17 @@ class VulnVisitor(ast.NodeVisitor):
                 return node.func.value.id == module and node.func.attr in funcs
         return False
 
+    def _snippet(self, node) -> str:
+        """Trecho real do código (até MAX_SNIPPET_LINES linhas); cai para 'Line N'."""
+        if self.source_lines:
+            start = max(0, node.lineno - 1)
+            end = min(len(self.source_lines), getattr(node, "end_lineno", node.lineno))
+            end = min(end, start + self.MAX_SNIPPET_LINES)
+            snippet = "\n".join(self.source_lines[start:end]).strip()
+            if snippet:
+                return snippet
+        return f"Line {node.lineno}"
+
     def _add(self, node, vuln_type, title, severity, cwe, owasp, rec) -> None:
         self.findings.append(Finding(
             id=str(uuid.uuid4()),
@@ -155,7 +191,7 @@ class VulnVisitor(ast.NodeVisitor):
             file_path=self.file_path,
             line_start=node.lineno,
             line_end=getattr(node, "end_lineno", node.lineno),
-            code_snippet=f"Line {node.lineno}",
+            code_snippet=self._snippet(node),
             recommendation=rec,
             cwe_id=cwe,
             owasp_category=owasp,

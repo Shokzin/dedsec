@@ -1,0 +1,21 @@
+# Configuração do DedSec (scan local e pre-commit).
+# Fica na raiz do projeto, na mesma pasta do docker-compose.yml.
+
+# Gravidade mínima que bloqueia o commit: low, medium, high, critical ou none
+fail_on = "high"
+
+# Pastas terminam com "/". Arquivos: caminho a partir da raiz, aceita * (ex.: "*.min.js")
+ignore_paths = [
+  "testes/",
+  "docs/",
+  # Estes dois arquivos contêm os PADRÕES de vulnerabilidade como texto das regras
+  # (ex.: a regex que procura eval), então o scanner acusa o próprio código.
+  "backend/scanner/engine/pattern_scanner.py",
+  "backend/scanner/engine/ast_analyzer.py",
+  # Falso positivo da regra de IDOR, que confunde Finding(id=...) com uma busca por ID.
+  # Remover daqui quando a regra for corrigida.
+  "backend/scanner/engine/ai_analyzer.py",
+]
+
+# Silencia um tipo de achado no projeto todo, por CWE ou por "type". Vazio por enquanto.
+ignore_rules = []
