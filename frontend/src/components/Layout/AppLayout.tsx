@@ -4,6 +4,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { useTheme, getTokens } from '../../hooks/useTheme'
 import { supabase } from '../../lib/supabase'
 import ThemeToggle from '../ThemeToggle'
+import LanguageSelect from '../LanguageSelect'
+import { useI18n } from '../../hooks/useI18n'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
@@ -11,6 +13,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth()
   const { isDark } = useTheme()
   const t = getTokens(isDark)
+  const { t: tr } = useI18n()
   const [signingOut, setSigningOut] = useState(false)
 
   // ── Live display name + avatar ─────────────────────────────────────────
@@ -103,17 +106,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             }}
               onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
               onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-              title="Back to home"
+              title={tr("nav.backHome")}
             >
               DedSec
             </button>
             <div style={{ display: 'flex', gap: 24 }}>
-              {navItem('/dashboard', 'Dashboard')}
-              {navItem('/scan', 'New scan')}
+              {navItem('/dashboard', tr("nav.dashboard"))}
+              {navItem('/scan', tr("nav.newScan"))}
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <LanguageSelect />
             <ThemeToggle />
 
             {/* Profile button with live avatar */}
@@ -164,7 +168,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               onMouseEnter={e => { e.currentTarget.style.color = t.text; e.currentTarget.style.borderColor = t.text }}
               onMouseLeave={e => { e.currentTarget.style.color = t.textSecondary; e.currentTarget.style.borderColor = t.border }}
             >
-              {signingOut ? 'Signing out...' : 'Sign out'}
+              {signingOut ? tr("nav.signingOut") : tr("nav.signOut")}
             </button>
           </div>
         </div>

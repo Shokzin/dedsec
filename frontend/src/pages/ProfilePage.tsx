@@ -4,6 +4,7 @@ import { useTheme, getTokens } from '../hooks/useTheme'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import AppLayout from '../components/Layout/AppLayout'
+import { useI18n } from '../hooks/useI18n'
 
 function Section({ title, desc, children, t }: {
   title: string; desc?: string; children: React.ReactNode; t: ReturnType<typeof getTokens>
@@ -23,6 +24,7 @@ export default function ProfilePage() {
   const { user, signOut } = useAuth()
   const { isDark } = useTheme()
   const t = getTokens(isDark)
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
@@ -55,7 +57,7 @@ export default function ProfilePage() {
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !user) return
-    if (file.size > 2 * 1024 * 1024) { alert('Image must be under 2MB.'); return }
+    if (file.size > 2 * 1024 * 1024) { alert(tr('profile.imageTooBig')); return }
 
     setAvatarUploading(true)
     const ext = file.name.split('.').pop()
@@ -111,8 +113,8 @@ export default function ProfilePage() {
   // ── Password ──────────────────────────────────────────────────────────────
   const handleChangePassword = async () => {
     setPwError(null); setPwSuccess(false)
-    if (newPw.length < 8) { setPwError('Password must be at least 8 characters.'); return }
-    if (newPw !== confirmPw) { setPwError('Passwords do not match.'); return }
+    if (newPw.length < 8) { setPwError(tr('pwd.tooShort')); return }
+    if (newPw !== confirmPw) { setPwError(tr('pwd.mismatch')); return }
     setSavingPw(true)
     const { error } = await supabase.auth.updateUser({ password: newPw })
     setSavingPw(false)
@@ -145,7 +147,7 @@ export default function ProfilePage() {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}))
-        throw new Error(err.detail ?? 'Failed to delete account.')
+        throw new Error(err.detail ?? tr('profile.deleteFailed'))
       }
 
       await signOut()
@@ -176,13 +178,13 @@ export default function ProfilePage() {
 
         <div style={{ marginBottom: 40 }}>
           <h1 style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 300, letterSpacing: '-1px', color: t.text }}>
-            Account <span style={{ fontWeight: 600 }}>Settings</span>
+            {tr('profile.kicker')} <span style={{ fontWeight: 600 }}>{tr('profile.title')}</span>
           </h1>
           <p style={{ fontSize: 14, color: t.textSecondary, marginTop: 6 }}>{user?.email}</p>
         </div>
 
         {/* ── Avatar ── */}
-        <Section title="Profile picture" desc="Upload a photo to personalize your account." t={t}>
+        <Section title={tr('profile.picture')} desc={tr('profile.pictureDesc')} t={t}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
             <div style={{ position: 'relative', flexShrink: 0 }}>
               <div style={{
@@ -211,28 +213,28 @@ export default function ProfilePage() {
                 cursor: 'pointer', marginBottom: 8, display: 'block',
                 opacity: avatarUploading ? 0.6 : 1,
               }}>
-                {avatarUploading ? 'Uploading...' : 'Upload photo'}
+                {avatarUploading ? tr('profile.uploading') : tr('profile.uploadPhoto')}
               </button>
               {avatarUrl && (
                 <button onClick={handleRemoveAvatar} style={{ fontSize: 12, color: t.textMuted, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0, display: 'block', marginBottom: 6 }}>
                   Remove photo
                 </button>
               )}
-              <p style={{ fontSize: 12, color: t.textMuted }}>JPG, PNG, GIF, WebP · Max 2MB</p>
+              <p style={{ fontSize: 12, color: t.textMuted }}>{tr('profile.photoHint')}</p>
             </div>
           </div>
         </Section>
 
         {/* ── Display name ── */}
-        <Section title="Profile" desc="Your display name appears on the dashboard greeting and navigation." t={t}>
+        <Section title={tr('profile.sectionProfile')} desc={tr('profile.profileDesc')} t={t}>
           <div style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: 13, fontWeight: 500, color: t.textSecondary, display: 'block', marginBottom: 8 }}>Display name</label>
+            <label style={{ fontSize: 13, fontWeight: 500, color: t.textSecondary, display: 'block', marginBottom: 8 }}>{tr('profile.displayName')}</label>
             <div style={{ display: 'flex', gap: 10 }}>
               <input
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSaveName()}
-                placeholder={user?.email?.split('@')[0] ?? 'Your name'}
+                placeholder={user?.email?.split('@')[0] ?? tr('auth.namePlaceholder')}
                 style={inputStyle(nameFocused)}
                 onFocus={() => setNameFocused(true)}
                 onBlur={() => setNameFocused(false)}
@@ -245,35 +247,35 @@ export default function ProfilePage() {
                 cursor: 'pointer', whiteSpace: 'nowrap',
                 opacity: savingName ? 0.6 : 1, transition: 'all 0.2s',
               }}>
-                {savingName ? 'Saving...' : nameSuccess ? '✓ Saved' : 'Save'}
+                {savingName ? tr('profile.saving') : nameSuccess ? `✓ ${tr('profile.saved')}` : tr('profile.saveShort')}
               </button>
             </div>
-            <p style={{ fontSize: 12, color: t.textMuted, marginTop: 6 }}>Leave blank to use your email username.</p>
+            <p style={{ fontSize: 12, color: t.textMuted, marginTop: 6 }}>{tr('profile.displayNameHint')}</p>
           </div>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 500, color: t.textSecondary, display: 'block', marginBottom: 8 }}>Email</label>
+            <label style={{ fontSize: 13, fontWeight: 500, color: t.textSecondary, display: 'block', marginBottom: 8 }}>{tr('profile.emailLabel')}</label>
             <div style={{ padding: '11px 14px', background: t.bgTertiary, border: `1.5px solid ${t.border}`, borderRadius: 8, fontSize: 14, color: t.textSecondary }}>
               {user?.email}
             </div>
-            <p style={{ fontSize: 12, color: t.textMuted, marginTop: 6 }}>Email cannot be changed.</p>
+            <p style={{ fontSize: 12, color: t.textMuted, marginTop: 6 }}>{tr('profile.emailLocked')}</p>
           </div>
         </Section>
 
         {/* ── Password ── */}
-        <Section title="Password" desc="Update your account password." t={t}>
+        <Section title={tr('profile.sectionPassword')} desc={tr('profile.passwordDesc')} t={t}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <label style={{ fontSize: 13, fontWeight: 500, color: t.textSecondary, display: 'block', marginBottom: 6 }}>New password</label>
+              <label style={{ fontSize: 13, fontWeight: 500, color: t.textSecondary, display: 'block', marginBottom: 6 }}>{tr('pwd.new')}</label>
               <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)}
-                placeholder="Min. 8 characters" style={inputStyle(pwFocused['new'])}
+                placeholder={tr('pwd.minPlaceholder')} style={inputStyle(pwFocused['new'])}
                 onFocus={() => setPwFocused(p => ({ ...p, new: true }))}
                 onBlur={() => setPwFocused(p => ({ ...p, new: false }))}
               />
             </div>
             <div>
-              <label style={{ fontSize: 13, fontWeight: 500, color: t.textSecondary, display: 'block', marginBottom: 6 }}>Confirm new password</label>
+              <label style={{ fontSize: 13, fontWeight: 500, color: t.textSecondary, display: 'block', marginBottom: 6 }}>{tr('pwd.confirm')}</label>
               <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
-                placeholder="Repeat new password" style={inputStyle(pwFocused['confirm'])}
+                placeholder={tr('pwd.repeatPlaceholder')} style={inputStyle(pwFocused['confirm'])}
                 onFocus={() => setPwFocused(p => ({ ...p, confirm: true }))}
                 onBlur={() => setPwFocused(p => ({ ...p, confirm: false }))}
               />
@@ -287,19 +289,18 @@ export default function ProfilePage() {
                 fontWeight: 500, fontFamily: 'inherit', border: 'none', cursor: 'pointer',
                 opacity: savingPw || !newPw || !confirmPw ? 0.5 : 1, transition: 'opacity 0.2s',
               }}>
-                {savingPw ? 'Updating...' : 'Update password'}
+                {savingPw ? tr('pwd.updating') : tr('pwd.update')}
               </button>
             </div>
           </div>
         </Section>
 
         {/* ── Danger zone ── */}
-        <Section title="Danger zone" t={t}>
+        <Section title={tr('profile.dangerZone')} t={t}>
           <div style={{ border: '1px solid #fecaca', borderRadius: 10, padding: '20px 24px', background: isDark ? 'rgba(239,68,68,0.05)' : '#fff5f5' }}>
-            <p style={{ fontSize: 14, fontWeight: 500, color: '#dc2626', marginBottom: 6 }}>Delete account</p>
+            <p style={{ fontSize: 14, fontWeight: 500, color: '#dc2626', marginBottom: 6 }}>{tr('profile.deleteAccount')}</p>
             <p style={{ fontSize: 13, color: t.textSecondary, marginBottom: 16 }}>
-              Permanently deletes your account and all associated scan data. This cannot be undone.
-              To confirm, type your email address below.
+              {tr('profile.deleteDesc')} {tr('profile.deleteConfirmHint')}
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <input
@@ -320,7 +321,7 @@ export default function ProfilePage() {
                   transition: 'opacity 0.2s',
                 }}
               >
-                {deleting ? 'Deleting...' : 'Delete account'}
+                {deleting ? tr('profile.deleting') : tr('profile.deleteAccount')}
               </button>
             </div>
             {deleteError && <p style={{ fontSize: 12, color: '#dc2626', marginTop: 10 }}>⚠ {deleteError}</p>}

@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTheme, getTokens } from '../hooks/useTheme'
+import { useI18n } from '../hooks/useI18n'
+import type { TranslationKey } from '../i18n/translations'
 import { useAuth } from '../hooks/useAuth'
 import ThemeToggle from '../components/ThemeToggle'
 
@@ -53,31 +55,31 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 }
 
 // ─── Data ──────────────────────────────────────────────────────────────────
-const FEATURES = [
-  { icon: '🔑', title: 'Secrets & Credentials', desc: 'Detects exposed API keys, hardcoded passwords, tokens, AWS credentials, and private keys committed to repositories.' },
-  { icon: '💉', title: 'Injection Vulnerabilities', desc: 'Identifies SQL injection, cross-site scripting, command injection, and path traversal patterns across multiple languages.' },
-  { icon: '⚙️', title: 'Misconfigurations', desc: 'Catches exposed .env files, CORS wildcards, debug mode enabled in production, and insecure cookie settings.' },
-  { icon: '🔬', title: 'Code Structure Analysis', desc: 'Uses Python AST parsing to detect unsafe deserialization, dynamic code execution, and dangerous subprocess calls.' },
-  { icon: '🔐', title: 'Access Control Flaws', desc: 'Identifies potential IDOR vulnerabilities, missing authentication checks, and mass assignment patterns.' },
-  { icon: '📊', title: 'Security Scoring', desc: 'Produces a 0–100 security score using a weighted algorithm with diminishing penalties so large codebases are assessed fairly.' },
+const FEATURES: { icon: string; titleKey: TranslationKey; descKey: TranslationKey }[] = [
+  { icon: '🔑', titleKey: 'land.detect1', descKey: 'land.detect1Desc' },
+  { icon: '💉', titleKey: 'land.detect2', descKey: 'land.detect2Desc' },
+  { icon: '⚙️', titleKey: 'land.detect3', descKey: 'land.detect3Desc' },
+  { icon: '🔬', titleKey: 'land.detect4', descKey: 'land.detect4Desc' },
+  { icon: '🔐', titleKey: 'land.detect5', descKey: 'land.detect5Desc' },
+  { icon: '📊', titleKey: 'land.detect6', descKey: 'land.detect6Desc' },
 ]
 
-const STEPS = [
-  { n: '01', title: 'Submit a URL', desc: 'Paste any public GitHub repository URL into the scanner.' },
-  { n: '02', title: 'Repository is cloned', desc: 'DedSec clones the repo in a sandboxed environment. No code is ever executed.' },
-  { n: '03', title: 'Three-layer analysis', desc: 'Pattern matching, AST analysis, and rule-based detection run in parallel across all files.' },
-  { n: '04', title: 'Results are generated', desc: 'Every finding is mapped to a CWE ID, OWASP category, file location, and remediation advice.' },
+const STEPS: { n: string; titleKey: TranslationKey; descKey: TranslationKey }[] = [
+  { n: '01', titleKey: 'land.step1', descKey: 'land.step1Desc' },
+  { n: '02', titleKey: 'land.step2', descKey: 'land.step2Desc' },
+  { n: '03', titleKey: 'land.step3', descKey: 'land.step3Desc' },
+  { n: '04', titleKey: 'land.step4', descKey: 'land.step4Desc' },
 ]
 
-const STACK_ITEMS = [
-  { name: 'Python', color: '#3776AB', role: 'Backend language', desc: 'Powers the scanner engine, AST analysis, and API. Chosen for its native AST module and security tooling ecosystem.' },
-  { name: 'FastAPI', color: '#009688', role: 'API framework', desc: 'Async-native REST API with automatic OpenAPI documentation and Pydantic request validation.' },
-  { name: 'React', color: '#61DAFB', role: 'Frontend framework', desc: 'Component-based UI with TypeScript for type-safe development and predictable data flow.' },
-  { name: 'TypeScript', color: '#3178C6', role: 'Frontend language', desc: 'Static typing catches API contract mismatches at compile time rather than at runtime.' },
-  { name: 'Supabase', color: '#3ECF8E', role: 'Database & Auth', desc: 'PostgreSQL with built-in Auth, Realtime subscriptions, and Row Level Security for data isolation.' },
-  { name: 'Celery', color: '#37814A', role: 'Task queue', desc: 'Processes scans asynchronously so API requests return immediately while analysis runs in background workers.' },
-  { name: 'Redis', color: '#DC382D', role: 'Message broker', desc: 'Bridges the API and worker containers. Also used as Celery result backend for task state tracking.' },
-  { name: 'Docker', color: '#2496ED', role: 'Infrastructure', desc: 'Orchestrates four isolated containers — API, worker, Redis, and frontend — with a single command.' },
+const STACK_ITEMS: { name: string; color: string; roleKey: TranslationKey; descKey: TranslationKey }[] = [
+  { name: 'Python',     color: '#3776AB', roleKey: 'land.roleBackendLang',    descKey: 'land.techPython' },
+  { name: 'FastAPI',    color: '#009688', roleKey: 'land.roleApiFramework',   descKey: 'land.techFastapi' },
+  { name: 'React',      color: '#61DAFB', roleKey: 'land.roleFrontFramework', descKey: 'land.techReact' },
+  { name: 'TypeScript', color: '#3178C6', roleKey: 'land.roleFrontLang',      descKey: 'land.techTypescript' },
+  { name: 'Supabase',   color: '#3ECF8E', roleKey: 'land.roleDbAuth',         descKey: 'land.techSupabase' },
+  { name: 'Celery',     color: '#37814A', roleKey: 'land.roleTaskQueue',      descKey: 'land.techCelery' },
+  { name: 'Redis',      color: '#DC382D', roleKey: 'land.roleBroker',         descKey: 'land.techRedis' },
+  { name: 'Docker',     color: '#2496ED', roleKey: 'land.roleInfra',          descKey: 'land.techDocker' },
 ]
 
 const SCAN_EXAMPLES = [
@@ -88,6 +90,7 @@ const SCAN_EXAMPLES = [
 
 // ─── Stack Carousel ────────────────────────────────────────────────────────
 function StackCarousel({ t }: { t: ReturnType<typeof getTokens> }) {
+  const { t: tr } = useI18n()
   const [active, setActive] = useState(0)
   const total = STACK_ITEMS.length
   const next = useCallback(() => setActive(a => (a + 1) % total), [total])
@@ -103,9 +106,9 @@ function StackCarousel({ t }: { t: ReturnType<typeof getTokens> }) {
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
             <span style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.5px', color: t.text }}>{item.name}</span>
-            <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 10px', borderRadius: 100, background: t.bgTertiary, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{item.role}</span>
+            <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 10px', borderRadius: 100, background: t.bgTertiary, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tr(item.roleKey)}</span>
           </div>
-          <p style={{ fontSize: 15, lineHeight: 1.7, color: t.textSecondary, maxWidth: 520 }}>{item.desc}</p>
+          <p style={{ fontSize: 15, lineHeight: 1.7, color: t.textSecondary, maxWidth: 520 }}>{tr(item.descKey)}</p>
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 }}>
@@ -134,6 +137,7 @@ function StackCarousel({ t }: { t: ReturnType<typeof getTokens> }) {
 
 // ─── Scan Carousel ─────────────────────────────────────────────────────────
 function ScanCarousel({ t }: { t: ReturnType<typeof getTokens> }) {
+  const { t: tr } = useI18n()
   const [active, setActive] = useState(0)
   useEffect(() => { const timer = setInterval(() => setActive(a => (a + 1) % SCAN_EXAMPLES.length), 3500); return () => clearInterval(timer) }, [])
   const scan = SCAN_EXAMPLES[active]
@@ -151,11 +155,11 @@ function ScanCarousel({ t }: { t: ReturnType<typeof getTokens> }) {
           <div style={{ fontSize: 13, fontWeight: 600, fontFamily: "'DM Mono', monospace", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: t.text }}>{scan.repo}</div>
           <div style={{ fontSize: 11, color: t.textMuted, marginTop: 2 }}>{scan.branch} · {scan.duration} · {scan.tag}</div>
         </div>
-        <div style={{ background: '#dcfce7', color: '#16a34a', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 100, flexShrink: 0 }}>Done</div>
+        <div style={{ background: '#dcfce7', color: '#16a34a', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 100, flexShrink: 0 }}>{tr('land.done')}</div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <div style={{ fontSize: 11, color: t.textMuted, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Security Score</div>
+          <div style={{ fontSize: 11, color: t.textMuted, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tr('land.securityScore')}</div>
           <div style={{ fontSize: 48, fontWeight: 600, lineHeight: 1, color: t.text }}>{scan.score}<span style={{ fontSize: 20, fontWeight: 400, color: t.textMuted }}>/100</span></div>
           <div style={{ fontSize: 12, color: scan.scoreColor, fontWeight: 600, marginTop: 4 }}>{scan.scoreLabel}</div>
         </div>
@@ -165,7 +169,7 @@ function ScanCarousel({ t }: { t: ReturnType<typeof getTokens> }) {
           <text x="36" y="41" textAnchor="middle" fontSize="13" fontWeight="600" fill={t.text}>{scan.score}</text>
         </svg>
       </div>
-      {[{ label: 'Critical', count: scan.critical, color: '#ef4444' }, { label: 'High', count: scan.high, color: '#f97316' }, { label: 'Medium', count: scan.medium, color: '#eab308' }, { label: 'Low', count: scan.low, color: '#3b82f6' }].map(s => (
+      {[{ label: tr('report.critical'), count: scan.critical, color: '#ef4444' }, { label: tr('report.high'), count: scan.high, color: '#f97316' }, { label: tr('report.medium'), count: scan.medium, color: '#eab308' }, { label: tr('report.low'), count: scan.low, color: '#3b82f6' }].map(s => (
         <div key={s.label} style={{ marginBottom: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
             <span style={{ color: t.textSecondary, fontWeight: 500 }}>{s.label}</span>
@@ -177,7 +181,7 @@ function ScanCarousel({ t }: { t: ReturnType<typeof getTokens> }) {
         </div>
       ))}
       <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${t.border}`, display: 'flex', justifyContent: 'space-between', fontSize: 12, color: t.textMuted }}>
-        <span>{scan.files} files scanned</span><span>{totalVulns} vulnerabilities</span>
+        <span>{tr('land.filesScanned', { count: scan.files })}</span><span>{tr('land.vulnsFound', { count: totalVulns })}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 16 }}>
         {SCAN_EXAMPLES.map((_, i) => (
@@ -190,6 +194,7 @@ function ScanCarousel({ t }: { t: ReturnType<typeof getTokens> }) {
 
 // ─── Main ──────────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const { t: tr } = useI18n()
   const navigate = useNavigate()
   const { isDark } = useTheme()
   const { user } = useAuth()
@@ -259,7 +264,7 @@ export default function LandingPage() {
           <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 500, fontSize: 18, letterSpacing: '-0.5px', color: t.text }}>DedSec</span>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 28 }} className="desktop-nav">
-            {[{ id: 'features', label: 'Features' }, { id: 'how-it-works', label: 'How it works' }, { id: 'stack', label: 'Stack' }, { id: 'about', label: 'About' }].map(({ id, label }) => (
+            {[{ id: 'features', label: tr('land.navFeatures') }, { id: 'how-it-works', label: tr('land.navHow') }, { id: 'stack', label: tr('land.navStack') }, { id: 'about', label: tr('land.navAbout') }].map(({ id, label }) => (
               <button key={id} className="nav-link" onClick={() => scrollTo(id)}>{label}</button>
             ))}
             <div style={{ width: 1, height: 20, background: t.border }} />
@@ -272,18 +277,18 @@ export default function LandingPage() {
                 onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
                 onMouseLeave={e => e.currentTarget.style.opacity = '1'}
               >
-                Go to dashboard →
+                {tr('land.goDashboard')}
               </button>
             ) : (
               <>
-                <button className="nav-link" onClick={() => navigate('/auth')}>Sign in</button>
+                <button className="nav-link" onClick={() => navigate('/auth')}>{tr('land.signIn')}</button>
                 <button
                   onClick={() => navigate('/auth')}
                   style={navCTAStyle}
                   onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
                   onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                 >
-                  Get started
+                  {tr('land.getStarted')}
                 </button>
               </>
             )}
@@ -305,15 +310,15 @@ export default function LandingPage() {
             ))}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <ThemeToggle />
-              <span style={{ fontSize: 13, color: t.textSecondary }}>{isDark ? 'Dark mode' : 'Light mode'}</span>
+              <span style={{ fontSize: 13, color: t.textSecondary }}>{isDark ? tr('land.darkMode') : tr('land.lightMode')}</span>
             </div>
             {user ? (
               <button onClick={() => { navigate('/dashboard'); setMenuOpen(false) }} style={{ ...navCTAStyle, padding: '12px 24px', fontSize: 14 }}>
-                Go to dashboard →
+                {tr('land.goDashboard')}
               </button>
             ) : (
               <button onClick={() => { navigate('/auth'); setMenuOpen(false) }} style={{ ...navCTAStyle, padding: '12px 24px', fontSize: 14 }}>
-                Get started →
+                {tr('land.getStartedArrow')}
               </button>
             )}
           </div>
@@ -327,14 +332,12 @@ export default function LandingPage() {
             <div style={{ flex: '0 0 55%', maxWidth: 580 }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: t.bgTertiary, border: `1px solid ${t.border}`, padding: '6px 14px', borderRadius: 100, marginBottom: 32, fontSize: 13, fontWeight: 500, color: t.textSecondary }}>
                 <span style={{ width: 7, height: 7, background: '#22c55e', borderRadius: '50%', display: 'inline-block' }} />
-                Open source · Graduation project
+                {tr('land.badge')}
               </div>
               <h1 style={{ fontSize: 'clamp(38px, 5.2vw, 64px)', fontWeight: 300, lineHeight: 1.1, letterSpacing: '-2px', marginBottom: 24, color: t.text }}>
-                DedSec — Find<br /><span style={{ fontWeight: 600 }}>vulnerabilities</span><br />before attackers do
+                {tr('land.heroLine1')}<br /><span style={{ fontWeight: 600 }}>{tr('land.heroLine2')}</span><br />{tr('land.heroLine3')}
               </h1>
-              <p style={{ fontSize: 18, lineHeight: 1.7, color: t.textSecondary, marginBottom: 40, maxWidth: 480 }}>
-                Submit any public GitHub repository URL. DedSec analyzes the codebase for security vulnerabilities and returns a detailed report with severity ratings, file locations, and remediation guidance.
-              </p>
+              <p style={{ fontSize: 18, lineHeight: 1.7, color: t.textSecondary, marginBottom: 40, maxWidth: 480 }}>{tr('land.heroSubtitleFull')}</p>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <button
                   onClick={() => navigate(user ? '/dashboard' : '/auth')}
@@ -342,13 +345,13 @@ export default function LandingPage() {
                   onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'translateY(-1px)' }}
                   onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none' }}
                 >
-                  {user ? 'Go to dashboard →' : 'Scan a repository →'}
+                  {user ? tr('land.goDashboard') : tr('land.scanRepo')}
                 </button>
                 <a href="https://github.com/Shokzin/dedsec" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'transparent', color: t.text, padding: '13px 28px', borderRadius: 6, fontSize: 15, fontWeight: 500, border: `1.5px solid ${t.border}`, cursor: 'pointer', fontFamily: 'inherit', transition: 'border-color 0.2s, transform 0.15s', textDecoration: 'none' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = t.text; e.currentTarget.style.transform = 'translateY(-1px)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.transform = 'none' }}
                 >
-                  View on GitHub
+                  {tr('land.viewGithub')}
                 </a>
               </div>
             </div>
@@ -363,7 +366,7 @@ export default function LandingPage() {
       <section style={{ padding: '60px 5%', borderTop: `1px solid ${t.borderLight}`, borderBottom: `1px solid ${t.borderLight}`, background: t.bgSecondary }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 40, textAlign: 'center' }}>
-            {[{ value: 12, suffix: '+', label: 'Vulnerability categories' }, { value: 3, suffix: ' layers', label: 'Analysis depth' }, { value: 100, suffix: ' pts', label: 'Security score range' }, { value: 8, suffix: 's avg', label: 'Scan duration' }].map(s => (
+            {[{ value: 12, suffix: '+', label: tr('land.metricCategories') }, { value: 3, suffix: '', label: tr('land.metricDepth') }, { value: 100, suffix: ' pts', label: tr('land.metricRange') }, { value: 8, suffix: 's', label: tr('land.metricDuration') }].map(s => (
               <Reveal key={s.label}>
                 <div style={{ fontSize: 40, fontWeight: 600, letterSpacing: '-1px', lineHeight: 1 }}>
                   <Counter target={s.value} suffix={s.suffix} color={t.text} />
@@ -382,17 +385,17 @@ export default function LandingPage() {
             <div style={{ marginBottom: 64 }}>
               <p style={sectionLabel}>Detection coverage</p>
               <div style={divider} />
-              <h2 style={{ ...sectionTitle, marginBottom: 16 }}>What DedSec <span style={{ fontWeight: 600 }}>detects</span></h2>
-              <p style={{ ...sectionSubtitle, maxWidth: 520 }}>The scanner runs three layers of analysis — pattern matching, code structure parsing, and rule-based detection — to find vulnerabilities across every major category.</p>
+              <h2 style={{ ...sectionTitle, marginBottom: 16 }}>{tr('land.detectTitle')} <span style={{ fontWeight: 600 }}>{tr('land.detectTitleBold')}</span></h2>
+              <p style={{ ...sectionSubtitle, maxWidth: 520 }}>{tr('land.detectSubtitle')}</p>
             </div>
           </Reveal>
           <div className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             {FEATURES.map((f, i) => (
-              <Reveal key={f.title} delay={i * 70}>
+              <Reveal key={f.titleKey} delay={i * 70}>
                 <div className="feature-card">
                   <div style={{ fontSize: 28, marginBottom: 16 }}>{f.icon}</div>
-                  <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 10, letterSpacing: '-0.3px', color: t.text }}>{f.title}</h3>
-                  <p style={{ fontSize: 14, lineHeight: 1.7, color: t.textSecondary }}>{f.desc}</p>
+                  <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 10, letterSpacing: '-0.3px', color: t.text }}>{tr(f.titleKey)}</h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.7, color: t.textSecondary }}>{tr(f.descKey)}</p>
                 </div>
               </Reveal>
             ))}
@@ -405,9 +408,9 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <Reveal>
             <div style={{ marginBottom: 64 }}>
-              <p style={sectionLabel}>Process</p>
+              <p style={sectionLabel}>{tr('land.processKicker')}</p>
               <div style={divider} />
-              <h2 style={sectionTitle}>How it <span style={{ fontWeight: 600 }}>works</span></h2>
+              <h2 style={sectionTitle}>{tr('land.howTitle')} <span style={{ fontWeight: 600 }}>{tr('land.howTitleBold')}</span></h2>
             </div>
           </Reveal>
           <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32 }}>
@@ -416,8 +419,8 @@ export default function LandingPage() {
                 <div style={{ position: 'relative' }}>
                   {i < STEPS.length - 1 && <div style={{ position: 'absolute', top: 18, left: '60%', right: '-40%', height: 1, background: t.border }} />}
                   <div style={{ width: 36, height: 36, borderRadius: '50%', background: t.text, color: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, marginBottom: 20, fontFamily: "'DM Mono', monospace" }}>{s.n}</div>
-                  <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, letterSpacing: '-0.3px', color: t.text }}>{s.title}</h3>
-                  <p style={{ fontSize: 14, lineHeight: 1.7, color: t.textSecondary }}>{s.desc}</p>
+                  <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, letterSpacing: '-0.3px', color: t.text }}>{tr(s.titleKey)}</h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.7, color: t.textSecondary }}>{tr(s.descKey)}</p>
                 </div>
               </Reveal>
             ))}
@@ -440,10 +443,10 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <Reveal>
             <div style={{ marginBottom: 48 }}>
-              <p style={sectionLabel}>Technologies</p>
+              <p style={sectionLabel}>{tr('land.techKicker')}</p>
               <div style={divider} />
-              <h2 style={sectionTitle}>Built with <span style={{ fontWeight: 600 }}>modern tools</span></h2>
-              <p style={{ ...sectionSubtitle, maxWidth: 480 }}>Every technology was chosen deliberately. Each one solves a specific problem in the architecture.</p>
+              <h2 style={sectionTitle}>{tr('land.techTitle')} <span style={{ fontWeight: 600 }}>{tr('land.techTitleBold')}</span></h2>
+              <p style={{ ...sectionSubtitle, maxWidth: 480 }}>{tr('land.techSubtitle')}</p>
             </div>
           </Reveal>
           <Reveal delay={100}><StackCarousel t={t} /></Reveal>
@@ -456,22 +459,22 @@ export default function LandingPage() {
           <div className="about-grid" style={{ display: 'flex', gap: 80, alignItems: 'flex-start' }}>
             <div style={{ flex: '0 0 45%' }}>
               <Reveal>
-                <p style={sectionLabel}>The project</p>
+                <p style={sectionLabel}>{tr('land.aboutKicker')}</p>
                 <div style={divider} />
-                <h2 style={{ ...sectionTitle, marginBottom: 24 }}>Why DedSec<br /><span style={{ fontWeight: 600 }}>was built</span></h2>
-                <p style={{ fontSize: 16, lineHeight: 1.8, color: t.textSecondary, marginBottom: 20 }}>DedSec started as a graduation project in Systems Analysis and Development, with a simple premise: most developers don't have access to professional security tooling. Enterprise solutions are expensive and often overkill for smaller teams or individual projects.</p>
-                <p style={{ fontSize: 16, lineHeight: 1.8, color: t.textSecondary, marginBottom: 20 }}>The goal was to build something genuinely useful — a tool that any developer can point at a repository and immediately understand what security issues exist, where they are, and how to fix them.</p>
-                <p style={{ fontSize: 16, lineHeight: 1.8, color: t.textSecondary }}>The name is a reference to the hacker collective from the Watch Dogs video game series — chosen because the project is about exposing hidden vulnerabilities before someone with bad intentions finds them first.</p>
+                <h2 style={{ ...sectionTitle, marginBottom: 24 }}>{tr('land.whyTitle')}<br /><span style={{ fontWeight: 600 }}>{tr('land.whyBuiltBold')}</span></h2>
+                <p style={{ fontSize: 16, lineHeight: 1.8, color: t.textSecondary, marginBottom: 20 }}>{tr('land.aboutText1')}</p>
+                <p style={{ fontSize: 16, lineHeight: 1.8, color: t.textSecondary, marginBottom: 20 }}>{tr('land.aboutText')}</p>
+                <p style={{ fontSize: 16, lineHeight: 1.8, color: t.textSecondary }}>{tr('land.aboutText3')}</p>
               </Reveal>
             </div>
             <div style={{ flex: 1 }}>
               <Reveal delay={150}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                   {[
-                    { title: 'No code execution', desc: 'The scanner clones repositories and reads files as plain text. It never imports, runs, or evaluates any code from the target repository.' },
-                    { title: 'Three analysis layers', desc: 'Pattern matching catches known signatures. AST analysis understands code structure. Rule-based detection finds logic-level issues that regex alone misses.' },
-                    { title: 'Actionable results', desc: 'Every finding includes the file path, line number, a code excerpt, CWE classification, OWASP category, and a specific remediation recommendation.' },
-                    { title: 'Designed to grow', desc: 'The scanner engine is modular — new detection rules can be added without touching the API or frontend. AI-enhanced analysis is planned for a future release.' },
+                    { title: tr('land.why1'), desc: tr('land.why1Desc') },
+                    { title: tr('land.why2'), desc: tr('land.why2Desc') },
+                    { title: tr('land.why3'), desc: tr('land.why3Desc') },
+                    { title: tr('land.why4'), desc: tr('land.why4Desc') },
                   ].map((p, i) => (
                     <Reveal key={p.title} delay={i * 80}>
                       <div style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: 12, padding: '24px 28px' }}>
@@ -492,16 +495,16 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <Reveal>
             <div style={{ marginBottom: 56 }}>
-              <p style={sectionLabel}>Use cases</p>
+              <p style={sectionLabel}>{tr('land.useKicker')}</p>
               <div style={divider} />
-              <h2 style={sectionTitle}>Who it's <span style={{ fontWeight: 600 }}>for</span></h2>
+              <h2 style={sectionTitle}>{tr('land.whoTitle')} <span style={{ fontWeight: 600 }}>{tr('land.whoTitleBold')}</span></h2>
             </div>
           </Reveal>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }} className="features-grid">
             {[
-              { label: 'Developers', title: 'Before you ship', desc: 'Run a scan before opening a pull request or deploying a release. Catch credential leaks and injection vulnerabilities before they reach production.' },
-              { label: 'Security students', title: 'Learn by example', desc: 'Scan open-source repositories to understand how real vulnerabilities appear in production code. Each finding links to CWE documentation.' },
-              { label: 'Code reviewers', title: 'Augment your review', desc: 'Use DedSec as a first pass before a manual security review. Focus your attention on the findings the automated scanner flagged.' },
+              { label: tr('land.who1'), title: tr('land.who1Title'), desc: tr('land.who1Desc') },
+              { label: tr('land.who2'), title: tr('land.who2Title'), desc: tr('land.who2Desc') },
+              { label: tr('land.who3'), title: tr('land.who3Title'), desc: tr('land.who3Desc') },
             ].map((u, i) => (
               <Reveal key={u.label} delay={i * 90}>
                 <div style={{ padding: '40px 36px', borderTop: `2px solid ${t.text}`, background: i === 1 ? t.text : t.bg, color: i === 1 ? t.bg : t.text, transition: 'background 0.3s' }}>
@@ -520,9 +523,9 @@ export default function LandingPage() {
         <div className="cta-inner" style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 40 }}>
           <Reveal>
             <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 48px)', fontWeight: 300, letterSpacing: '-1.5px', lineHeight: 1.2, marginBottom: 16 }}>
-              Ready to scan<br /><span style={{ fontWeight: 600 }}>your repository?</span>
+              {tr('land.ctaTitle')}<br /><span style={{ fontWeight: 600 }}>{tr('land.ctaTitleBold')}</span>
             </h2>
-            <p style={{ fontSize: 17, color: '#888', maxWidth: 440, lineHeight: 1.7 }}>Create an account and run your first scan in under a minute.</p>
+            <p style={{ fontSize: 17, color: '#888', maxWidth: 440, lineHeight: 1.7 }}>{tr('land.ctaSubtitle')}</p>
           </Reveal>
           <Reveal delay={150}>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -530,13 +533,13 @@ export default function LandingPage() {
                 onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
                 onMouseLeave={e => e.currentTarget.style.opacity = '1'}
               >
-                {user ? 'Go to dashboard →' : 'Get started →'}
+                {user ? tr('land.goDashboard') : tr('land.getStartedArrow')}
               </button>
               <a href="https://github.com/Shokzin/dedsec" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', color: '#888', padding: '13px 28px', borderRadius: 6, fontSize: 15, fontWeight: 500, fontFamily: 'inherit', border: '1.5px solid #333', cursor: 'pointer', transition: 'border-color 0.2s, color 0.2s', textDecoration: 'none' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#888'; e.currentTarget.style.color = '#fff' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#888' }}
               >
-                View on GitHub
+                {tr('land.viewGithub')}
               </a>
             </div>
           </Reveal>
@@ -547,7 +550,7 @@ export default function LandingPage() {
       <footer style={{ padding: '28px 5%', borderTop: '1px solid #222', background: isDark ? '#000' : '#111' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: '#555' }}>DedSec</span>
-          <span style={{ fontSize: 13, color: '#555' }}>Graduation project — Systems Analysis and Development</span>
+          <span style={{ fontSize: 13, color: '#555' }}>{tr('land.footer')}</span>
           <a href="https://github.com/Shokzin/dedsec" target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#555', textDecoration: 'none', transition: 'color 0.2s' }}
             onMouseEnter={e => e.currentTarget.style.color = '#fff'}
             onMouseLeave={e => e.currentTarget.style.color = '#555'}

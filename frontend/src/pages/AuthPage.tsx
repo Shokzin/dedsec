@@ -2,31 +2,34 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme, getTokens } from '../hooks/useTheme'
+import { useI18n } from '../hooks/useI18n'
+import type { TranslationKey } from '../i18n/translations'
 import { supabase } from '../lib/supabase'
 import ThemeToggle from '../components/ThemeToggle'
 
 type Mode = 'login' | 'register' | 'reset_form'
 
 interface PasswordStrength {
-  score: number; label: string; color: string; issues: string[]
+  score: number; labelKey: TranslationKey; color: string; issues: TranslationKey[]
 }
 
 function checkPassword(password: string): PasswordStrength {
-  const issues: string[] = []
-  if (password.length < 8) issues.push('At least 8 characters')
-  if (!/[A-Z]/.test(password)) issues.push('One uppercase letter')
-  if (!/[a-z]/.test(password)) issues.push('One lowercase letter')
-  if (!/[0-9]/.test(password)) issues.push('One number')
-  if (!/[^A-Za-z0-9]/.test(password)) issues.push('One special character')
+  const issues: TranslationKey[] = []
+  if (password.length < 8) issues.push('pwd.req8')
+  if (!/[A-Z]/.test(password)) issues.push('pwd.reqUpper')
+  if (!/[a-z]/.test(password)) issues.push('pwd.reqLower')
+  if (!/[0-9]/.test(password)) issues.push('pwd.reqNumber')
+  if (!/[^A-Za-z0-9]/.test(password)) issues.push('pwd.reqSpecial')
   const score = 4 - Math.min(4, issues.length)
-  const labels = ['Very weak', 'Weak', 'Fair', 'Good', 'Strong']
+  const labels: TranslationKey[] = ['pwd.veryWeak', 'pwd.weak', 'pwd.fair', 'pwd.good', 'pwd.strong']
   const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a']
-  return { score, label: labels[score], color: colors[score], issues }
+  return { score, labelKey: labels[score], color: colors[score], issues }
 }
 
 function PasswordStrengthBar({ password, t }: { password: string; t: ReturnType<typeof getTokens> }) {
+  const { t: tr } = useI18n()
   if (!password) return null
-  const { score, label, color, issues } = checkPassword(password)
+  const { score, labelKey, color, issues } = checkPassword(password)
   return (
     <div style={{ marginTop: 8 }}>
       <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
@@ -35,11 +38,11 @@ function PasswordStrengthBar({ password, t }: { password: string; t: ReturnType<
         ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <span style={{ fontSize: 11, color, fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 11, color, fontWeight: 500 }}>{tr(labelKey)}</span>
         {issues.length > 0 && (
           <div style={{ textAlign: 'right' }}>
             {issues.slice(0, 2).map(issue => (
-              <p key={issue} style={{ fontSize: 11, color: t.textMuted, lineHeight: 1.4 }}>· {issue}</p>
+              <p key={issue} style={{ fontSize: 11, color: t.textMuted, lineHeight: 1.4 }}>· {tr(issue)}</p>
             ))}
           </div>
         )}
@@ -98,6 +101,7 @@ function OAuthButton({ icon, label, onClick, t }: {
 }
 
 export default function AuthPage() {
+  const { t: tr } = useI18n()
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -136,9 +140,9 @@ useEffect(() => {
   // Expired or invalid link → show friendly error on login page
   if (hasError || errorCode) {
     if (errorCode === 'otp_expired') {
-      setError('Your reset link has expired. Enter your email and click "Forgot password?" to get a new one.')
+      setError(tr('auth.linkExpiredLong'))
     } else {
-      setError('The reset link is invalid or already used. Please request a new one.')
+      setError(tr('pwd.linkInvalid'))
     }
     window.history.replaceState(null, '', '/auth')
     return
@@ -153,7 +157,7 @@ useEffect(() => {
       }
     })
   }
-}, [])
+}, [tr])
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
@@ -165,16 +169,16 @@ useEffect(() => {
       else navigate('/dashboard')
     } else {
       const { issues } = checkPassword(password)
-      if (issues.length > 0) { setError(`Password requirements not met: ${issues.join(', ')}.`); setLoading(false); return }
+      if (issues.length > 0) { setError(tr('pwd.requirementsNotMet', { list: issues.map(i => tr(i)).join(', ') })); setLoading(false); return }
       const { error } = await signUp(email, password)
       if (error) setError(error)
-      else setSuccess('Account created! Check your email to confirm before signing in.')
+      else setSuccess(tr('auth.accountCreated'))
     }
     setLoading(false)
   }
 
   const handleForgotPassword = async () => {
-    if (!email) { setError('Enter your email address first.'); return }
+    if (!email) { setError(tr('auth.enterEmailFirst')); return }
     setError(null); setSuccess(null); setLoading(true)
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       // This tells Supabase where to redirect the user after they click the email link.
@@ -184,13 +188,13 @@ useEffect(() => {
     })
     setLoading(false)
     if (error) setError(error.message)
-    else setSuccess('Password reset email sent! Check your inbox and spam folder.')
+    else setSuccess(tr('auth.resetSent'))
   }
 
   const handleSetNewPassword = async () => {
     setError(null)
-    if (newPw.length < 8) { setError('Password must be at least 8 characters.'); return }
-    if (newPw !== confirmPw) { setError('Passwords do not match.'); return }
+    if (newPw.length < 8) { setError(tr('pwd.tooShort')); return }
+    if (newPw !== confirmPw) { setError(tr('pwd.mismatch')); return }
     setLoading(true)
     const { error } = await supabase.auth.updateUser({ password: newPw })
     setLoading(false)
@@ -247,7 +251,7 @@ useEffect(() => {
           {mode !== 'reset_form' && (
             <>
               <span style={{ fontSize: 13, color: t.textMuted }}>
-                {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}
+                {mode === 'login' ? tr('auth.noAccount') : tr('auth.haveAccount')}
               </span>
               <button onClick={() => switchMode(mode === 'login' ? 'register' : 'login')} style={{
                 fontSize: 13, fontWeight: 500, color: t.text, background: 'none',
@@ -257,7 +261,7 @@ useEffect(() => {
                 onMouseEnter={e => e.currentTarget.style.borderColor = t.inputFocus}
                 onMouseLeave={e => e.currentTarget.style.borderColor = t.inputBorder}
               >
-                {mode === 'login' ? 'Sign up' : 'Sign in'}
+                {mode === 'login' ? tr('auth.signUp') : tr('auth.signIn')}
               </button>
             </>
           )}
@@ -275,10 +279,10 @@ useEffect(() => {
               <div style={{ marginBottom: 32, textAlign: 'center' }}>
                 <div style={{ fontSize: 32, marginBottom: 16 }}>🔐</div>
                 <h1 style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-1px', marginBottom: 8, color: t.text }}>
-                  Set new password
+                  {tr('pwd.setNew')}
                 </h1>
                 <p style={{ fontSize: 15, color: t.textSecondary, lineHeight: 1.6 }}>
-                  Choose a strong new password for your account.
+                  {tr('pwd.chooseStrong')}
                 </p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -286,7 +290,7 @@ useEffect(() => {
                   <InputField
                     label="New password" type="password"
                     value={newPw} onChange={setNewPw}
-                    placeholder="Min. 8 chars, include special character"
+                    placeholder={tr('auth.passwordPlaceholder')}
                     autoComplete="new-password" t={t}
                   >
                     {newPw && <PasswordStrengthBar password={newPw} t={t} />}
@@ -295,7 +299,7 @@ useEffect(() => {
                 <InputField
                   label="Confirm new password" type="password"
                   value={confirmPw} onChange={setConfirmPw}
-                  placeholder="Repeat new password"
+                  placeholder={tr('pwd.repeatPlaceholder')}
                   autoComplete="new-password" t={t}
                 />
                 {error && <div style={{ padding: '12px 16px', background: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, fontSize: 13, color: '#ef4444', display: 'flex', gap: 8 }}><span>⚠</span>{error}</div>}
@@ -311,7 +315,7 @@ useEffect(() => {
                     transition: 'opacity 0.2s',
                   }}
                 >
-                  {loading ? 'Updating...' : 'Update password'}
+                  {loading ? tr('pwd.updating') : tr('pwd.update')}
                 </button>
               </div>
             </>
@@ -322,50 +326,50 @@ useEffect(() => {
             <>
               <div style={{ marginBottom: 36, textAlign: 'center' }}>
                 <h1 style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-1px', marginBottom: 8, color: t.text }}>
-                  {mode === 'login' ? 'Welcome back' : 'Create your account'}
+                  {mode === 'login' ? tr('auth.welcomeBack') : tr('auth.createAccount')}
                 </h1>
                 <p style={{ fontSize: 15, color: t.textSecondary, lineHeight: 1.6 }}>
-                  {mode === 'login' ? 'Sign in to access your scan history and reports.' : 'Start scanning repositories for vulnerabilities.'}
+                  {mode === 'login' ? tr('auth.signInSubtitle') : tr('auth.signUpSubtitle')}
                 </p>
               </div>
 
               <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-                <OAuthButton label={oauthLoading === 'github' ? 'Connecting...' : 'GitHub'} onClick={() => handleOAuth('github')} t={t}
+                <OAuthButton label={oauthLoading === 'github' ? tr('auth.connecting') : 'GitHub'} onClick={() => handleOAuth('github')} t={t}
                   icon={<svg width="17" height="17" viewBox="0 0 24 24" fill={t.text}><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>}
                 />
-                <OAuthButton label={oauthLoading === 'google' ? 'Connecting...' : 'Google'} onClick={() => handleOAuth('google')} t={t}
+                <OAuthButton label={oauthLoading === 'google' ? tr('auth.connecting') : 'Google'} onClick={() => handleOAuth('google')} t={t}
                   icon={<svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>}
                 />
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
                 <div style={{ flex: 1, height: 1, background: t.borderLight }} />
-                <span style={{ fontSize: 12, color: t.textMuted, fontWeight: 500, letterSpacing: '0.05em' }}>OR</span>
+                <span style={{ fontSize: 12, color: t.textMuted, fontWeight: 500, letterSpacing: '0.05em' }}>{tr('auth.or')}</span>
                 <div style={{ flex: 1, height: 1, background: t.borderLight }} />
               </div>
 
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {mode === 'register' && (
-                  <InputField label="Full name (optional)" value={name} onChange={setName}
-                    placeholder="Your name" autoComplete="name" t={t} />
+                  <InputField label={tr('auth.fullNameOptional')} value={name} onChange={setName}
+                    placeholder={tr('auth.namePlaceholder')} autoComplete="name" t={t} />
                 )}
-                <InputField label="Email address" type="email" value={email} onChange={setEmail}
+                <InputField label={tr('auth.email')} type="email" value={email} onChange={setEmail}
                   placeholder="you@example.com" autoComplete="email" t={t} />
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <label style={{ fontSize: 13, fontWeight: 500, color: t.textSecondary }}>Password</label>
+                    <label style={{ fontSize: 13, fontWeight: 500, color: t.textSecondary }}>{tr('auth.password')}</label>
                     {mode === 'login' && (
                       <button type="button" onClick={handleForgotPassword} disabled={loading}
                         style={{ fontSize: 12, color: t.textMuted, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', transition: 'color 0.2s' }}
                         onMouseEnter={e => e.currentTarget.style.color = t.text}
                         onMouseLeave={e => e.currentTarget.style.color = t.textMuted}
                       >
-                        Forgot password?
+                        {tr('auth.forgot')}
                       </button>
                     )}
                   </div>
                   <InputField label="" type="password" value={password} onChange={setPassword}
-                    placeholder={mode === 'register' ? 'Min. 8 chars, include special character' : '••••••••••••'}
+                    placeholder={mode === 'register' ? tr('auth.passwordPlaceholder') : '••••••••••••'}
                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'} t={t}
                   >
                     {mode === 'register' && password && <PasswordStrengthBar password={password} t={t} />}
@@ -385,7 +389,7 @@ useEffect(() => {
                   onMouseEnter={e => { if (!loading) e.currentTarget.style.transform = 'translateY(-1px)' }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
                 >
-                  {loading ? (mode === 'login' ? 'Signing in...' : 'Creating account...') : (mode === 'login' ? 'Sign in' : 'Create account')}
+                  {loading ? (mode === 'login' ? tr('auth.signingIn') : tr('auth.creatingAccount')) : (mode === 'login' ? tr('auth.signIn') : tr('auth.createAccountButton'))}
                 </button>
               </form>
 
@@ -400,7 +404,7 @@ useEffect(() => {
       </div>
 
       <div style={{ padding: '20px 32px', borderTop: `1px solid ${t.borderLight}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-        <span style={{ fontSize: 12, color: t.textMuted }}>DedSec · Graduation project</span>
+        <span style={{ fontSize: 12, color: t.textMuted }}>{tr('auth.footer')}</span>
         <a href="https://github.com/Shokzin/dedsec" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: t.textMuted, textDecoration: 'none', transition: 'color 0.2s' }}
           onMouseEnter={e => e.currentTarget.style.color = t.text}
           onMouseLeave={e => e.currentTarget.style.color = t.textMuted}

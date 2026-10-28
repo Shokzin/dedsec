@@ -4,10 +4,23 @@ import { useNavigate } from 'react-router-dom'
 import { useTheme, getTokens } from '../hooks/useTheme'
 import { useAuth } from '../hooks/useAuth'
 import { scansApi } from '../api/scans'
-import type { ScanListItem } from '../api/scans'
+import type { ScanListItem, ScanListPage } from '../api/scans'
 import AppLayout from '../components/Layout/AppLayout'
+import { useI18n } from '../hooks/useI18n'
+import type { TranslationKey } from '../i18n/translations'
+
+/** Quantas análises por página. */
+const PAGE_SIZE = 10
+
+const STATUS_KEY: Record<string, TranslationKey> = {
+  completed: 'status.completed',
+  running: 'status.running',
+  queued: 'status.queued',
+  failed: 'status.failed',
+}
 
 function StatusPill({ status }: { status: string }) {
+  const { t: tr } = useI18n()
   const configs: Record<string, { bg: string; color: string; dot: string }> = {
     completed: { bg: '#dcfce7', color: '#16a34a', dot: '#22c55e' },
     running:   { bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6' },
@@ -23,7 +36,7 @@ function StatusPill({ status }: { status: string }) {
       textTransform: 'capitalize', letterSpacing: '0.02em', whiteSpace: 'nowrap',
     }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot, animation: status === 'running' ? 'pulse 1.5s infinite' : 'none' }} />
-      {status}
+      {STATUS_KEY[status] ? tr(STATUS_KEY[status]) : status}
     </span>
   )
 }
@@ -42,6 +55,7 @@ function DeleteButton({
   onDelete: (id: string) => Promise<void>
   t: ReturnType<typeof getTokens>
 }) {
+  const { t: tr } = useI18n()
   const [confirming, setConfirming] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -66,28 +80,28 @@ function DeleteButton({
   if (confirming) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={e => e.stopPropagation()}>
-        <span style={{ fontSize: 11, color: t.textMuted }}>Remove?</span>
+        <span style={{ fontSize: 11, color: t.textMuted }}>{tr('dashboard.removeConfirm')}</span>
         <button onClick={handleConfirm} disabled={loading} style={{
           fontSize: 11, fontWeight: 600, color: '#dc2626',
           background: 'none', border: `1px solid #fecaca`, borderRadius: 4,
           padding: '3px 8px', cursor: 'pointer', fontFamily: 'inherit',
           opacity: loading ? 0.6 : 1,
         }}>
-          {loading ? '...' : 'Yes'}
+          {loading ? '...' : tr('common.yes')}
         </button>
         <button onClick={handleCancel} style={{
           fontSize: 11, color: t.textMuted, background: 'none',
           border: `1px solid ${t.border}`, borderRadius: 4,
           padding: '3px 8px', cursor: 'pointer', fontFamily: 'inherit',
         }}>
-          No
+          {tr('common.no')}
         </button>
       </div>
     )
   }
 
   return (
-    <button onClick={handleClick} title="Remove from history" style={{
+    <button onClick={handleClick} title={tr('dashboard.removeTitle')} style={{
       width: 28, height: 28, borderRadius: 6,
       background: 'none', border: `1px solid transparent`,
       cursor: 'pointer', color: t.textMuted,
@@ -125,10 +139,10 @@ function ScanRow({
   onDelete: (id: string) => Promise<void>
   t: ReturnType<typeof getTokens>
 }) {
+  const { locale } = useI18n()
   const repoName = scan.repo_url.replace('https://github.com/', '')
   const [owner, repo] = repoName.split('/')
-  const date = new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  const time = new Date(scan.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  const dateTime = new Date(scan.created_at).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })
 
   return (
     <tr
@@ -148,7 +162,7 @@ function ScanRow({
             <p style={{ fontSize: 13, fontWeight: 500, color: t.text, fontFamily: "'DM Mono', monospace" }}>
               <span style={{ color: t.textSecondary }}>{owner}/</span>{repo}
             </p>
-            <p style={{ fontSize: 11, color: t.textMuted, marginTop: 2 }}>{date} at {time}</p>
+            <p style={{ fontSize: 11, color: t.textMuted, marginTop: 2 }}>{dateTime}</p>
           </div>
         </div>
       </td>
@@ -174,24 +188,58 @@ function ScanRow({
 }
 
 // ── Dashboard ──────────────────────────────────────────────────────────────────
+function PageButton({ label, disabled, onClick, t }: {
+  label: string
+  disabled: boolean
+  onClick: () => void
+  t: ReturnType<typeof getTokens>
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        background: 'transparent', color: disabled ? t.textMuted : t.text,
+        border: `1.5px solid ${t.border}`, borderRadius: 6,
+        padding: '7px 14px', fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
+        cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.45 : 1,
+        transition: 'border-color 0.2s',
+      }}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.borderColor = t.text }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = t.border }}
+    >
+      {label}
+    </button>
+  )
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { isDark } = useTheme()
   const t = getTokens(isDark)
+  const { t: tr } = useI18n()
   const queryClient = useQueryClient()
 
-  const { data: scans, isLoading, isError } = useQuery({
-    queryKey: ['scans'],
-    queryFn: scansApi.list,
+  const [page, setPage] = useState(0)
+
+  const { data: pageData, isLoading, isError } = useQuery({
+    queryKey: ['scans', page],
+    queryFn: () => scansApi.list({ limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
+    refetchInterval: 5000,
+    placeholderData: previous => previous,   // evita piscar ao trocar de página
+  })
+
+  // Os números do topo vêm de todas as análises, não apenas da página exibida.
+  const { data: stats } = useQuery({
+    queryKey: ['scan-stats'],
+    queryFn: scansApi.stats,
     refetchInterval: 5000,
   })
 
-  const completed = scans?.filter(s => s.status === 'completed') ?? []
-  const avgScore = completed.length
-    ? Math.round(completed.reduce((a, b) => a + (b.score ?? 0), 0) / completed.length)
-    : null
-  const totalVulns = scans?.reduce((a, b) => a + b.total_vulnerabilities, 0) ?? 0
+  const scans = pageData?.items
+  const total = pageData?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const running = scans?.filter(s => s.status === 'running' || s.status === 'queued') ?? []
 
   const displayName = user?.user_metadata?.display_name
@@ -201,14 +249,16 @@ export default function DashboardPage() {
   const handleDeleteScan = async (scanId: string) => {
     try {
       await scansApi.deleteScan(scanId)
-      // Optimistically remove from cache so the UI updates immediately
-      queryClient.setQueryData<ScanListItem[]>(['scans'], old =>
-        old?.filter(s => s.scan_id !== scanId) ?? []
+      // Remove da página atual para a tela responder na hora...
+      queryClient.setQueryData<ScanListPage>(['scans', page], old =>
+        old ? { ...old, items: old.items.filter(s => s.scan_id !== scanId), total: Math.max(0, old.total - 1) } : old
       )
     } catch (err) {
       console.error('Failed to delete scan:', err)
-      // Re-fetch on error to restore correct state
+    } finally {
+      // ...e recarrega, porque a exclusão desloca os itens entre as páginas.
       queryClient.invalidateQueries({ queryKey: ['scans'] })
+      queryClient.invalidateQueries({ queryKey: ['scan-stats'] })
     }
   }
 
@@ -217,11 +267,11 @@ export default function DashboardPage() {
       {/* ── Header ── */}
       <div style={{ marginBottom: 40, animation: 'fadeIn 0.5s ease forwards' }}>
         <p style={{ fontSize: 13, color: t.textMuted, marginBottom: 6 }}>
-          Welcome back, {displayName}
+          {tr('dashboard.welcome', { name: displayName })}
         </p>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <h1 style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 300, letterSpacing: '-1px', color: t.text, lineHeight: 1.2 }}>
-            Scan <span style={{ fontWeight: 600 }}>Dashboard</span>
+            {tr('dashboard.titleLight')} <span style={{ fontWeight: 600 }}>{tr('dashboard.titleBold')}</span>
           </h1>
           <button onClick={() => navigate('/scan')} style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -233,19 +283,19 @@ export default function DashboardPage() {
             onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'translateY(-1px)' }}
             onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none' }}
           >
-            + New scan
+            {tr('dashboard.newScan')}
           </button>
         </div>
       </div>
 
       {/* ── Stats ── */}
-      {scans && scans.length > 0 && (
+      {stats && stats.total_scans > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 40 }}>
           {[
-            { label: 'Total scans', value: scans.length, mono: false },
-            { label: 'Completed', value: completed.length, mono: false },
-            { label: 'Avg score', value: avgScore !== null ? avgScore : '—', mono: true },
-            { label: 'Total findings', value: totalVulns, mono: false },
+            { label: tr('dashboard.totalScans'), value: stats.total_scans, mono: false },
+            { label: tr('dashboard.completed'), value: stats.completed, mono: false },
+            { label: tr('dashboard.avgScore'), value: stats.average_score !== null ? stats.average_score : '—', mono: true },
+            { label: tr('dashboard.totalFindings'), value: stats.total_vulnerabilities, mono: false },
           ].map((stat, i) => (
             <div key={stat.label} style={{
               background: t.cardBg, border: `1px solid ${t.cardBorder}`,
@@ -265,7 +315,7 @@ export default function DashboardPage() {
       {running.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '12px 16px', marginBottom: 24 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3b82f6', animation: 'pulse 1.5s infinite', flexShrink: 0 }} />
-          <p style={{ fontSize: 13, color: '#1d4ed8' }}>{running.length} scan{running.length > 1 ? 's' : ''} currently running — this page refreshes automatically.</p>
+          <p style={{ fontSize: 13, color: '#1d4ed8' }}>{running.length === 1 ? tr('dashboard.runningOne') : tr('dashboard.runningMany', { count: running.length })}</p>
         </div>
       )}
 
@@ -273,14 +323,14 @@ export default function DashboardPage() {
       {isLoading && (
         <div style={{ textAlign: 'center', padding: '60px 0', color: t.textMuted }}>
           <div style={{ width: 28, height: 28, border: `2px solid ${t.border}`, borderTopColor: t.text, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
-          <p style={{ fontSize: 14 }}>Loading scans...</p>
+          <p style={{ fontSize: 14 }}>{tr('dashboard.loading')}</p>
         </div>
       )}
 
       {/* ── Error ── */}
       {isError && (
         <div style={{ background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 8, padding: '16px 20px' }}>
-          <p style={{ fontSize: 14, color: '#dc2626' }}>Failed to load scans. Make sure the API is running at {import.meta.env.VITE_API_URL}.</p>
+          <p style={{ fontSize: 14, color: '#dc2626' }}>{tr('dashboard.loadError')} {tr('dashboard.apiHint', { url: import.meta.env.VITE_API_URL })}</p>
         </div>
       )}
 
@@ -288,10 +338,10 @@ export default function DashboardPage() {
       {!isLoading && !isError && scans?.length === 0 && (
         <div style={{ border: `1px dashed ${t.border}`, borderRadius: 12, padding: '64px 40px', textAlign: 'center' }}>
           <div style={{ width: 48, height: 48, borderRadius: 12, background: t.bgTertiary, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 20 }}>🔍</div>
-          <p style={{ fontSize: 16, fontWeight: 500, color: t.text, marginBottom: 8 }}>No scans yet</p>
-          <p style={{ fontSize: 14, color: t.textSecondary, marginBottom: 28 }}>Submit a GitHub repository URL to run your first vulnerability scan.</p>
+          <p style={{ fontSize: 16, fontWeight: 500, color: t.text, marginBottom: 8 }}>{tr('dashboard.empty')}</p>
+          <p style={{ fontSize: 14, color: t.textSecondary, marginBottom: 28 }}>{tr('dashboard.emptyHint')}</p>
           <button onClick={() => navigate('/scan')} style={{ background: t.btnPrimary, color: t.btnPrimaryTxt, padding: '11px 24px', borderRadius: 6, fontSize: 14, fontWeight: 500, fontFamily: 'inherit', border: 'none', cursor: 'pointer' }}>
-            Start first scan →
+            {tr('dashboard.startFirst')}
           </button>
         </div>
       )}
@@ -302,7 +352,7 @@ export default function DashboardPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: t.bgSecondary }}>
-                {['Repository', 'Status', 'Score', 'Findings', ''].map((h, i) => (
+                {[tr('dashboard.colRepository'), tr('dashboard.colStatus'), tr('dashboard.colScore'), tr('dashboard.colFindings'), ''].map((h, i) => (
                   <th key={h + i} style={{
                     padding: '12px 20px', fontSize: 11, fontWeight: 600, color: t.textMuted,
                     textAlign: i === 0 ? 'left' : i === 4 ? 'right' : 'center',
@@ -326,6 +376,25 @@ export default function DashboardPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* ── Pagination ── */}
+      {!isLoading && total > PAGE_SIZE && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 12, flexWrap: 'wrap', marginTop: 20,
+        }}>
+          <p style={{ fontSize: 13, color: t.textMuted }}>
+            {tr('dashboard.showing', { from: page * PAGE_SIZE + 1, to: Math.min((page + 1) * PAGE_SIZE, total), total })}
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <PageButton label={tr('dashboard.previous')} disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))} t={t} />
+            <span style={{ fontSize: 13, color: t.textSecondary, padding: '0 6px', fontFamily: "'DM Mono', monospace" }}>
+              {page + 1} / {totalPages}
+            </span>
+            <PageButton label={tr('dashboard.next')} disabled={page + 1 >= totalPages} onClick={() => setPage(p => p + 1)} t={t} />
+          </div>
         </div>
       )}
     </AppLayout>

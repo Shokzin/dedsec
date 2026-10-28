@@ -5,6 +5,7 @@ import { scansApi } from '../api/scans'
 import type { VulnerabilityItem } from '../api/scans'
 import { useTheme, getTokens } from '../hooks/useTheme'
 import AppLayout from '../components/Layout/AppLayout'
+import { useI18n } from '../hooks/useI18n'
 
 type Severity = 'critical' | 'high' | 'medium' | 'low'
 type SeverityFilter = 'all' | Severity
@@ -17,10 +18,11 @@ const SEV: Record<Severity, { bg: string; color: string; border: string; dot: st
 }
 
 function ScoreRing({ score, t }: { score: number; t: ReturnType<typeof getTokens> }) {
+  const { t: tr } = useI18n()
   const r = 44
   const circ = 2 * Math.PI * r
   const color = score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : score >= 40 ? '#f97316' : '#ef4444'
-  const label = score >= 80 ? 'Secure' : score >= 60 ? 'Moderate' : score >= 40 ? 'Vulnerable' : 'Critical'
+  const label = score >= 80 ? tr('report.scoreSecure') : score >= 60 ? tr('report.scoreModerate') : score >= 40 ? tr('report.scoreVulnerable') : tr('report.scoreCritical')
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
       <div style={{ position: 'relative', width: 110, height: 110 }}>
@@ -57,6 +59,7 @@ function SeverityBadge({ severity }: { severity: Severity }) {
 }
 
 function VulnCard({ vuln, t, isDark }: { vuln: VulnerabilityItem; t: ReturnType<typeof getTokens>; isDark: boolean }) {
+  const { t: tr } = useI18n()
   const [open, setOpen] = useState(false)
   const sev = vuln.severity as Severity
   const cfg = SEV[sev] ?? SEV.low
@@ -93,16 +96,16 @@ function VulnCard({ vuln, t, isDark }: { vuln: VulnerabilityItem; t: ReturnType<
       {open && (
         <div style={{ borderTop: `1px solid ${cfg.border}`, padding: '20px 24px', background: t.cardBg, display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Description</p>
+            <p style={{ fontSize: 11, fontWeight: 600, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{tr('report.description')}</p>
             <p style={{ fontSize: 14, lineHeight: 1.7, color: t.textSecondary }}>{vuln.description}</p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
             <div>
-              <p style={{ fontSize: 11, fontWeight: 600, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Location</p>
+              <p style={{ fontSize: 11, fontWeight: 600, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{tr('report.location')}</p>
               <p style={{ fontSize: 13, color: t.text, fontFamily: "'DM Mono', monospace" }}>
                 {vuln.file_path}<br />
-                <span style={{ color: t.textMuted }}>Line {vuln.line_start}{vuln.line_end !== vuln.line_start ? `–${vuln.line_end}` : ''}</span>
+                <span style={{ color: t.textMuted }}>{tr('report.line')} {vuln.line_start}{vuln.line_end !== vuln.line_start ? `–${vuln.line_end}` : ''}</span>
               </p>
             </div>
             {vuln.cwe_id && (
@@ -125,7 +128,7 @@ function VulnCard({ vuln, t, isDark }: { vuln: VulnerabilityItem; t: ReturnType<
 
           {vuln.code_snippet && (
             <div>
-              <p style={{ fontSize: 11, fontWeight: 600, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Code</p>
+              <p style={{ fontSize: 11, fontWeight: 600, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{tr('report.code')}</p>
               <pre style={{
                 background: isDark ? '#0d0d0d' : '#f8f8f8',
                 border: `1px solid ${t.border}`, borderRadius: 8,
@@ -138,7 +141,7 @@ function VulnCard({ vuln, t, isDark }: { vuln: VulnerabilityItem; t: ReturnType<
           )}
 
           <div style={{ borderLeft: `3px solid ${cfg.dot}`, paddingLeft: 14 }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Recommendation</p>
+            <p style={{ fontSize: 11, fontWeight: 600, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{tr('report.recommendation')}</p>
             <p style={{ fontSize: 14, lineHeight: 1.7, color: t.textSecondary }}>{vuln.recommendation}</p>
           </div>
         </div>
@@ -154,6 +157,7 @@ export default function ReportPage() {
   const t = getTokens(isDark)
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all')
   const [search, setSearch] = useState('')
+  const { t: tr } = useI18n()
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
 
@@ -186,7 +190,7 @@ export default function ReportPage() {
       exportReportPdf(report)
     } catch (err) {
       console.error('PDF export failed', err)
-      setExportError('Could not generate the PDF. Please try again.')
+      setExportError(tr('report.pdfError'))
     } finally {
       setExporting(false)
     }
@@ -197,7 +201,7 @@ export default function ReportPage() {
       <div style={{ textAlign: 'center', padding: '80px 0', color: t.textMuted }}>
         <div style={{ width: 28, height: 28, border: `2px solid ${t.border}`, borderTopColor: t.text, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-        <p style={{ fontSize: 14 }}>Loading report...</p>
+        <p style={{ fontSize: 14 }}>{tr('report.loading')}</p>
       </div>
     </AppLayout>
   )
@@ -205,9 +209,9 @@ export default function ReportPage() {
   if (isError || !report) return (
     <AppLayout>
       <div style={{ textAlign: 'center', padding: '80px 0' }}>
-        <p style={{ fontSize: 15, color: '#dc2626', marginBottom: 16 }}>Report not found.</p>
+        <p style={{ fontSize: 15, color: '#dc2626', marginBottom: 16 }}>{tr('report.notFound')}</p>
         <button onClick={() => navigate('/dashboard')} style={{ fontSize: 14, color: t.text, background: 'none', border: `1.5px solid ${t.border}`, borderRadius: 6, padding: '9px 20px', cursor: 'pointer', fontFamily: 'inherit' }}>
-          ← Back to dashboard
+          {tr('report.backDashboard')}
         </button>
       </div>
     </AppLayout>
@@ -230,19 +234,19 @@ export default function ReportPage() {
           onMouseEnter={e => e.currentTarget.style.color = t.text}
           onMouseLeave={e => e.currentTarget.style.color = t.textMuted}
         >
-          ← Dashboard
+          ← {tr('nav.dashboard')}
         </button>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap', marginBottom: 32 }}>
           <div>
-            <p style={{ fontSize: 13, color: t.textMuted, marginBottom: 4 }}>Scan report</p>
+            <p style={{ fontSize: 13, color: t.textMuted, marginBottom: 4 }}>{tr('report.kicker')}</p>
             <h1 style={{ fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 300, letterSpacing: '-1px', color: t.text, lineHeight: 1.2, fontFamily: "'DM Mono', monospace" }}>
               <span style={{ color: t.textSecondary }}>{owner}/</span>{repo}
             </h1>
             {report.status === 'completed' && (
               <p style={{ fontSize: 13, color: t.textMuted, marginTop: 6 }}>
-                {report.scanned_files} files · {report.scan_duration_seconds?.toFixed(1)}s
+                {report.scanned_files} {tr('report.files')} · {report.scan_duration_seconds?.toFixed(1)}s
               </p>
             )}
             {report.status === 'completed' && (
@@ -261,7 +265,7 @@ export default function ReportPage() {
                     onMouseEnter={e => { if (!exporting) e.currentTarget.style.borderColor = t.text }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = t.border }}
                   >
-                    {exporting ? 'Generating PDF...' : 'Export PDF'}
+                    {exporting ? tr('report.generatingPdf') : tr('report.exportPdf')}
                   </button>
                   <button
                     onClick={() => navigate(`/compare/${scanId}`)}
@@ -274,7 +278,7 @@ export default function ReportPage() {
                     onMouseEnter={e => { e.currentTarget.style.borderColor = t.text }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = t.border }}
                   >
-                    Compare scans
+                    {tr('report.compare')}
                   </button>
                 </div>
                 {exportError && (
@@ -290,14 +294,14 @@ export default function ReportPage() {
         {isRunning && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '14px 18px', marginBottom: 28 }}>
             <div style={{ width: 14, height: 14, border: '2px solid #93c5fd', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
-            <p style={{ fontSize: 13, color: '#1d4ed8' }}>Scan is {report.status} — results will appear automatically when complete.</p>
+            <p style={{ fontSize: 13, color: '#1d4ed8' }}>{tr('report.running', { status: tr(report.status === 'running' ? 'status.running' : 'status.queued') })}</p>
           </div>
         )}
 
         {/* Failed */}
         {report.status === 'failed' && (
           <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '14px 18px', marginBottom: 28 }}>
-            <p style={{ fontSize: 13, color: '#dc2626' }}>⚠ Scan failed: {report.error_message}</p>
+            <p style={{ fontSize: 13, color: '#dc2626' }}>⚠ {tr('report.failed', { reason: report.error_message ?? '' })}</p>
           </div>
         )}
 
@@ -305,11 +309,11 @@ export default function ReportPage() {
         {report.status === 'completed' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 36 }}>
             {[
-              { label: 'Total', value: report.total_vulnerabilities, color: t.text, id: 'all' },
-              { label: 'Critical', value: report.critical_count, color: '#ef4444', id: 'critical' },
-              { label: 'High', value: report.high_count, color: '#f97316', id: 'high' },
-              { label: 'Medium', value: report.medium_count, color: '#eab308', id: 'medium' },
-              { label: 'Low', value: report.low_count, color: '#3b82f6', id: 'low' },
+              { label: tr('report.total'), value: report.total_vulnerabilities, color: t.text, id: 'all' },
+              { label: tr('report.critical'), value: report.critical_count, color: '#ef4444', id: 'critical' },
+              { label: tr('report.high'), value: report.high_count, color: '#f97316', id: 'high' },
+              { label: tr('report.medium'), value: report.medium_count, color: '#eab308', id: 'medium' },
+              { label: tr('report.low'), value: report.low_count, color: '#3b82f6', id: 'low' },
             ].map((s, i) => (
               <div key={s.label} onClick={() => setSeverityFilter(s.id as SeverityFilter)}
                 style={{
@@ -333,27 +337,27 @@ export default function ReportPage() {
         {report.status === 'completed' && report.vulnerabilities.length === 0 && (
           <div style={{ textAlign: 'center', padding: '64px 40px', border: `1px dashed ${t.border}`, borderRadius: 12 }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>✓</div>
-            <p style={{ fontSize: 16, fontWeight: 500, color: t.text, marginBottom: 8 }}>No vulnerabilities found</p>
-            <p style={{ fontSize: 14, color: t.textSecondary }}>This repository looks clean across all three analysis layers.</p>
+            <p style={{ fontSize: 16, fontWeight: 500, color: t.text, marginBottom: 8 }}>{tr('report.clean')}</p>
+            <p style={{ fontSize: 14, color: t.textSecondary }}>{tr('report.cleanHint')}</p>
           </div>
         )}
 
         {/* Search + filter */}
         {report.vulnerabilities.length > 0 && (
           <div style={{ display: 'flex', gap: 10, marginBottom: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-            <input type="text" placeholder="Search by title, file, or type..."
+            <input type="text" placeholder={tr('report.searchPlaceholder')}
               value={search} onChange={e => setSearch(e.target.value)}
               style={{ flex: 1, minWidth: 200, background: t.inputBg, border: `1.5px solid ${t.inputBorder}`, borderRadius: 8, padding: '10px 14px', fontSize: 13, color: t.text, fontFamily: 'inherit', outline: 'none', transition: 'border-color 0.2s' }}
               onFocus={e => e.target.style.borderColor = t.inputFocus}
               onBlur={e => e.target.style.borderColor = t.inputBorder}
             />
-            <p style={{ fontSize: 13, color: t.textMuted }}>{filtered.length} result{filtered.length !== 1 ? 's' : ''}</p>
+            <p style={{ fontSize: 13, color: t.textMuted }}>{filtered.length === 1 ? tr('report.resultsOne') : tr('report.results', { count: filtered.length })}</p>
           </div>
         )}
 
         {filtered.length === 0 && report.vulnerabilities.length > 0 && (
           <div style={{ textAlign: 'center', padding: '40px 0', color: t.textMuted }}>
-            <p style={{ fontSize: 14 }}>No results match your filter.</p>
+            <p style={{ fontSize: 14 }}>{tr('report.noMatch')}</p>
           </div>
         )}
 
@@ -369,14 +373,14 @@ export default function ReportPage() {
         {report.status === 'completed' && report.vulnerabilities.length > 0 && (
           <div style={{ marginTop: 40, paddingTop: 32, borderTop: `1px solid ${t.borderLight}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
             <p style={{ fontSize: 13, color: t.textMuted }}>
-              {report.total_vulnerabilities} vulnerabilities · {report.scanned_files} files · {report.scan_duration_seconds?.toFixed(1)}s
+              {tr('report.footerSummary', { total: report.total_vulnerabilities, files: report.scanned_files, seconds: report.scan_duration_seconds?.toFixed(1) ?? '—' })}
             </p>
             <button onClick={() => navigate('/scan')}
               style={{ background: t.btnPrimary, color: t.btnPrimaryTxt, padding: '10px 22px', borderRadius: 6, fontSize: 13, fontWeight: 500, fontFamily: 'inherit', border: 'none', cursor: 'pointer', transition: 'opacity 0.2s' }}
               onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
               onMouseLeave={e => e.currentTarget.style.opacity = '1'}
             >
-              Scan another repository →
+              {tr('report.scanAnother')}
             </button>
           </div>
         )}

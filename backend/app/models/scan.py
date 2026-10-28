@@ -73,3 +73,19 @@ class ScanListItem(BaseModel):
     score: int | None
     total_vulnerabilities: int
     created_at: datetime
+
+
+class ScanListPage(BaseModel):
+    """Uma página da lista de análises, com o total para montar a navegação."""
+    items: list[ScanListItem]
+    total: int
+    limit: int
+    offset: int
+
+
+class ScanStats(BaseModel):
+    """Números agregados de TODAS as análises do usuário, não só da página atual."""
+    total_scans: int = 0
+    completed: int = 0
+    average_score: int | None = None
+    total_vulnerabilities: int = 0

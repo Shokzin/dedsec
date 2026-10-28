@@ -4,7 +4,9 @@ import base64
 import json
 import uuid
 from datetime import datetime, timezone
-from app.models.scan import ScanCreateRequest, ScanReport, ScanListItem, ScanStatus
+from app.models.scan import (
+    ScanCreateRequest, ScanReport, ScanListItem, ScanListPage, ScanStats, ScanStatus,
+)
 from app.core.supabase import get_supabase
 from supabase import Client
 
@@ -53,22 +55,32 @@ async def create_scan(
     return {"scan_id": scan_id, "status": ScanStatus.QUEUED.value}
 
 
-@router.get("", response_model=list[ScanListItem])
+@router.get("", response_model=ScanListPage)
 async def list_scans(
-    limit: int = Query(default=20, le=100),
+    limit: int = Query(default=10, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    repo_url: Optional[str] = Query(default=None, description="Restringe a um repositório"),
     db: Client = Depends(get_supabase),
     user_id: str = Depends(get_current_user_id),
-) -> list[ScanListItem]:
-    response = (
+) -> ScanListPage:
+    query = (
         db.table("scans")
-        .select("id, repo_url, status, security_score, total_vulnerabilities, created_at")
+        .select(
+            "id, repo_url, status, security_score, total_vulnerabilities, created_at",
+            count="exact",           # ← total de registros, para montar a navegação
+        )
         .eq("user_id", user_id)      # ← filter by real user
+    )
+    if repo_url:
+        query = query.eq("repo_url", repo_url)
+
+    response = (
+        query
         .order("created_at", desc=True)
         .range(offset, offset + limit - 1)
         .execute()
     )
-    return [
+    items = [
         ScanListItem(
             scan_id=row["id"],
             repo_url=row["repo_url"],
@@ -79,6 +91,38 @@ async def list_scans(
         )
         for row in (response.data or [])
     ]
+    return ScanListPage(
+        items=items,
+        total=response.count if response.count is not None else len(items),
+        limit=limit,
+        offset=offset,
+    )
+
+
+# Precisa vir antes de "/{scan_id}", senão "stats" seria lido como um identificador.
+@router.get("/stats", response_model=ScanStats)
+async def scan_stats(
+    db: Client = Depends(get_supabase),
+    user_id: str = Depends(get_current_user_id),
+) -> ScanStats:
+    """Agregados de todas as análises do usuário, independentes da paginação."""
+    response = (
+        db.table("scans")
+        .select("status, security_score, total_vulnerabilities")
+        .eq("user_id", user_id)
+        .execute()
+    )
+    rows = response.data or []
+    pontuacoes = [
+        r["security_score"] for r in rows
+        if r.get("status") == ScanStatus.COMPLETED.value and r.get("security_score") is not None
+    ]
+    return ScanStats(
+        total_scans=len(rows),
+        completed=sum(1 for r in rows if r.get("status") == ScanStatus.COMPLETED.value),
+        average_score=round(sum(pontuacoes) / len(pontuacoes)) if pontuacoes else None,
+        total_vulnerabilities=sum(r.get("total_vulnerabilities") or 0 for r in rows),
+    )
 
 
 @router.get("/{scan_id}", response_model=ScanReport)

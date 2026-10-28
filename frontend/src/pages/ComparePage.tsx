@@ -7,13 +7,15 @@ import { compareScans } from '../lib/compareScans'
 import type { ChangeStatus, ChangedFinding } from '../lib/compareScans'
 import { useTheme, getTokens } from '../hooks/useTheme'
 import AppLayout from '../components/Layout/AppLayout'
+import { useI18n } from '../hooks/useI18n'
+import type { TranslationKey } from '../i18n/translations'
 
 type Tokens = ReturnType<typeof getTokens>
 
-const STATUS: Record<ChangeStatus, { label: string; color: string; bg: string; border: string; sign: string }> = {
-  fixed:     { label: 'Fixed',     color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', sign: '−' },
-  new:       { label: 'New',       color: '#dc2626', bg: '#fef2f2', border: '#fecaca', sign: '+' },
-  unchanged: { label: 'Unchanged', color: '#71717a', bg: '#fafafa', border: '#e4e4e7', sign: '=' },
+const STATUS: Record<ChangeStatus, { labelKey: TranslationKey; color: string; bg: string; border: string; sign: string }> = {
+  fixed:     { labelKey: 'compare.fixed',     color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', sign: '−' },
+  new:       { labelKey: 'compare.new',       color: '#dc2626', bg: '#fef2f2', border: '#fecaca', sign: '+' },
+  unchanged: { labelKey: 'compare.unchanged', color: '#71717a', bg: '#fafafa', border: '#e4e4e7', sign: '=' },
 }
 
 const SEV_COLOR: Record<string, string> = {
@@ -24,11 +26,12 @@ function repoNameOf(url: string): string {
   return url.replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '').replace(/\/+$/, '')
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+function formatDate(iso: string, locale: string): string {
+  return new Date(iso).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 function StatCard({ status, value, t }: { status: ChangeStatus; value: number; t: Tokens }) {
+  const { t: tr } = useI18n()
   const cfg = STATUS[status]
   return (
     <div style={{
@@ -36,7 +39,7 @@ function StatCard({ status, value, t }: { status: ChangeStatus; value: number; t
       borderRadius: 10, padding: '16px 18px',
     }}>
       <p style={{ fontSize: 11, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
-        {cfg.label}
+        {tr(cfg.labelKey)}
       </p>
       <p style={{ fontSize: 26, fontWeight: 600, color: cfg.color, letterSpacing: '-0.5px' }}>
         {value}
@@ -46,6 +49,7 @@ function StatCard({ status, value, t }: { status: ChangeStatus; value: number; t
 }
 
 function ScoreShift({ before, after, t }: { before: number | null; after: number | null; t: Tokens }) {
+  const { t: tr } = useI18n()
   if (before === null || after === null) return null
   const delta = after - before
   const color = delta > 0 ? '#16a34a' : delta < 0 ? '#dc2626' : t.textMuted
@@ -57,16 +61,16 @@ function ScoreShift({ before, after, t }: { before: number | null; after: number
       borderRadius: 10, padding: '18px 22px', marginBottom: 20,
     }}>
       <div>
-        <p style={{ fontSize: 11, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>Previous</p>
+        <p style={{ fontSize: 11, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>{tr('compare.previous')}</p>
         <p style={{ fontSize: 30, fontWeight: 600, color: tone(before), letterSpacing: '-1px', margin: 0 }}>{before}</p>
       </div>
       <span style={{ fontSize: 22, color: t.textMuted }}>→</span>
       <div>
-        <p style={{ fontSize: 11, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>Current</p>
+        <p style={{ fontSize: 11, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>{tr('compare.current')}</p>
         <p style={{ fontSize: 30, fontWeight: 600, color: tone(after), letterSpacing: '-1px', margin: 0 }}>{after}</p>
       </div>
       <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-        <p style={{ fontSize: 11, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>Change</p>
+        <p style={{ fontSize: 11, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>{tr('compare.change')}</p>
         <p style={{ fontSize: 22, fontWeight: 600, color, margin: 0 }}>
           {delta > 0 ? '+' : ''}{delta}
         </p>
@@ -76,6 +80,7 @@ function ScoreShift({ before, after, t }: { before: number | null; after: number
 }
 
 function FindingRow({ item, t }: { item: ChangedFinding; t: Tokens }) {
+  const { t: tr } = useI18n()
   const cfg = STATUS[item.status]
   const v = item.vuln
   return (
@@ -107,7 +112,7 @@ function FindingRow({ item, t }: { item: ChangedFinding; t: Tokens }) {
       }}>
         {v.file_path?.split('/').pop()}:{v.line_start}
         {item.previousLine !== undefined && (
-          <span style={{ opacity: 0.7 }}> (was {item.previousLine})</span>
+          <span style={{ opacity: 0.7 }}> ({tr('compare.was', { line: item.previousLine })})</span>
         )}
       </span>
     </div>
@@ -121,6 +126,7 @@ export default function ComparePage() {
   const t = getTokens(isDark)
   const [pickedBaseId, setPickedBaseId] = useState<string>('')
   const [showUnchanged, setShowUnchanged] = useState(false)
+  const { t: tr, locale } = useI18n()
 
   const { data: head, isLoading: loadingHead } = useQuery({
     queryKey: ['scan', scanId],
@@ -128,10 +134,15 @@ export default function ComparePage() {
     enabled: Boolean(scanId),
   })
 
-  const { data: list } = useQuery({ queryKey: ['scans'], queryFn: scansApi.list })
+  // O filtro por repositório é feito no servidor, para não depender da paginação.
+  const { data: list } = useQuery({
+    queryKey: ['scans', 'repo', head?.repo_url],
+    queryFn: () => scansApi.list({ repoUrl: head!.repo_url, limit: 100 }),
+    enabled: Boolean(head?.repo_url),
+  })
 
   // Análises concluídas do mesmo repositório, anteriores a esta, da mais recente para a mais antiga
-  const candidates: ScanListItem[] = (list ?? [])
+  const candidates: ScanListItem[] = (list?.items ?? [])
     .filter(s =>
       s.scan_id !== scanId &&
       s.status === 'completed' &&
@@ -159,7 +170,7 @@ export default function ComparePage() {
       <div style={{ textAlign: 'center', padding: '80px 0', color: t.textMuted }}>
         <div style={{ width: 28, height: 28, border: `2px solid ${t.border}`, borderTopColor: t.text, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-        <p style={{ fontSize: 14 }}>Loading scans...</p>
+        <p style={{ fontSize: 14 }}>{tr('compare.loading')}</p>
       </div>
     </AppLayout>
   )
@@ -167,9 +178,9 @@ export default function ComparePage() {
   if (!head) return (
     <AppLayout>
       <div style={{ textAlign: 'center', padding: '80px 0' }}>
-        <p style={{ fontSize: 15, color: '#dc2626', marginBottom: 16 }}>Scan not found.</p>
+        <p style={{ fontSize: 15, color: '#dc2626', marginBottom: 16 }}>{tr('compare.notFound')}</p>
         <button onClick={() => navigate('/dashboard')} style={{ fontSize: 14, color: t.text, background: 'none', border: `1.5px solid ${t.border}`, borderRadius: 6, padding: '9px 20px', cursor: 'pointer', fontFamily: 'inherit' }}>
-          ← Back to dashboard
+          {tr('report.backDashboard')}
         </button>
       </div>
     </AppLayout>
@@ -186,28 +197,28 @@ export default function ComparePage() {
         onMouseEnter={e => (e.currentTarget.style.color = t.text)}
         onMouseLeave={e => (e.currentTarget.style.color = t.textMuted)}
       >
-        ← Back to report
+        {tr('compare.backReport')}
       </button>
 
-      <p style={{ fontSize: 13, color: t.textMuted, marginBottom: 4 }}>Scan comparison</p>
+      <p style={{ fontSize: 13, color: t.textMuted, marginBottom: 4 }}>{tr('compare.kicker')}</p>
       <h1 style={{ fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 300, letterSpacing: '-1px', color: t.text, lineHeight: 1.2, fontFamily: "'DM Mono', monospace", marginBottom: 24 }}>
         <span style={{ color: t.textSecondary }}>{owner}/</span>{repo}
       </h1>
 
       {candidates.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '56px 40px', border: `1px dashed ${t.border}`, borderRadius: 12 }}>
-          <p style={{ fontSize: 16, fontWeight: 500, color: t.text, marginBottom: 8 }}>No earlier scan to compare</p>
+          <p style={{ fontSize: 16, fontWeight: 500, color: t.text, marginBottom: 8 }}>{tr('compare.noEarlier')}</p>
           <p style={{ fontSize: 14, color: t.textSecondary, marginBottom: 20 }}>
-            Run this repository again to track how its security evolves.
+            {tr('compare.noEarlierHint')}
           </p>
           <button onClick={() => navigate('/scan')} style={{ background: t.btnPrimary, color: t.btnPrimaryTxt, padding: '10px 22px', borderRadius: 6, fontSize: 13, fontWeight: 500, fontFamily: 'inherit', border: 'none', cursor: 'pointer' }}>
-            New scan →
+            {tr('compare.newScan')}
           </button>
         </div>
       ) : (
         <>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 22 }}>
-            <label htmlFor="base-scan" style={{ fontSize: 13, color: t.textMuted }}>Compare against:</label>
+            <label htmlFor="base-scan" style={{ fontSize: 13, color: t.textMuted }}>{tr('compare.against')}</label>
             <select
               id="base-scan"
               value={baseId}
@@ -219,14 +230,14 @@ export default function ComparePage() {
             >
               {candidates.map(s => (
                 <option key={s.scan_id} value={s.scan_id}>
-                  {formatDate(s.created_at)} — score {s.score ?? '—'} ({s.total_vulnerabilities} findings)
+                  {tr('compare.option', { date: formatDate(s.created_at, locale), score: s.score ?? '—', count: s.total_vulnerabilities })}
                 </option>
               ))}
             </select>
           </div>
 
           {loadingBase || !comparison ? (
-            <p style={{ fontSize: 14, color: t.textMuted, padding: '32px 0' }}>Comparing...</p>
+            <p style={{ fontSize: 14, color: t.textMuted, padding: '32px 0' }}>{tr('compare.comparing')}</p>
           ) : (
             <>
               <ScoreShift before={comparison.scoreBefore} after={comparison.scoreAfter} t={t} />
@@ -239,7 +250,7 @@ export default function ComparePage() {
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
                 <p style={{ fontSize: 13, color: t.textMuted }}>
-                  {visible.length} finding{visible.length !== 1 ? 's' : ''} shown
+                  {visible.length === 1 ? tr('compare.shownOne') : tr('compare.shown', { count: visible.length })}
                 </p>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: t.textSecondary, cursor: 'pointer' }}>
                   <input
@@ -248,15 +259,15 @@ export default function ComparePage() {
                     onChange={e => setShowUnchanged(e.target.checked)}
                     style={{ cursor: 'pointer' }}
                   />
-                  Show unchanged findings
+                  {tr('compare.showUnchanged')}
                 </label>
               </div>
 
               {visible.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '48px 40px', border: `1px dashed ${t.border}`, borderRadius: 12 }}>
-                  <p style={{ fontSize: 15, color: t.text, marginBottom: 6 }}>Nothing changed between these scans</p>
+                  <p style={{ fontSize: 15, color: t.text, marginBottom: 6 }}>{tr('compare.nothingChanged')}</p>
                   <p style={{ fontSize: 13, color: t.textSecondary }}>
-                    {comparison.counts.unchanged} finding{comparison.counts.unchanged !== 1 ? 's' : ''} remained the same.
+                    {comparison.counts.unchanged === 1 ? tr('compare.allSameOne') : tr('compare.allSame', { count: comparison.counts.unchanged })}
                   </p>
                 </div>
               ) : (

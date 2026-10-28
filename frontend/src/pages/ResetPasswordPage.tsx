@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useTheme, getTokens } from '../hooks/useTheme'
+import { useI18n } from '../hooks/useI18n'
 
 export default function ResetPasswordPage() {
+  const { t: tr } = useI18n()
   const [newPw, setNewPw] = useState('')
   const [confirmPw, setConfirmPw] = useState('')
   const [loading, setLoading] = useState(false)
@@ -20,7 +22,7 @@ export default function ResetPasswordPage() {
     const params = new URLSearchParams(hash.replace('#', ''))
 
     if (params.get('error') || params.get('error_code')) {
-      setError('Reset link expired. Please request a new one.')
+      setError(tr('pwd.linkExpired'))
       window.history.replaceState(null, '', '/reset-password')
       return
     }
@@ -41,7 +43,7 @@ export default function ResetPasswordPage() {
 
     const timeout = setTimeout(() => {
       setReady(prev => {
-        if (!prev) setError('Reset link expired. Please request a new one.')
+        if (!prev) setError(tr('pwd.linkExpired'))
         return prev
       })
       window.history.replaceState(null, '', '/reset-password')
@@ -51,12 +53,12 @@ export default function ResetPasswordPage() {
       subscription.unsubscribe()
       clearTimeout(timeout)
     }
-  }, [])
+  }, [tr])
 
   const handleSubmit = async () => {
     setError(null)
-    if (newPw.length < 8) { setError('Password must be at least 8 characters.'); return }
-    if (newPw !== confirmPw) { setError('Passwords do not match.'); return }
+    if (newPw.length < 8) { setError(tr('pwd.tooShort')); return }
+    if (newPw !== confirmPw) { setError(tr('pwd.mismatch')); return }
     setLoading(true)
     const { error } = await supabase.auth.updateUser({ password: newPw })
     setLoading(false)
@@ -86,16 +88,16 @@ export default function ResetPasswordPage() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}>🔐</div>
           <h1 style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-1px', marginBottom: 8 }}>
-            Set new password
+            {tr('pwd.setNew')}
           </h1>
           <p style={{ fontSize: 15, color: t.textSecondary }}>
-            {ready ? 'Choose a strong new password for your account.' : 'Verifying your reset link...'}
+            {ready ? tr('pwd.chooseStrong') : tr('pwd.verifying')}
           </p>
         </div>
 
         {!ready && !error && (
           <div style={{ textAlign: 'center', color: t.textMuted, fontSize: 14 }}>
-            ⏳ Loading...
+            ⏳ {tr('common.loading')}
           </div>
         )}
 
@@ -103,23 +105,23 @@ export default function ResetPasswordPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: t.textSecondary, marginBottom: 8 }}>
-                New password
+                {tr('pwd.new')}
               </label>
               <input
                 type="password" value={newPw}
                 onChange={e => setNewPw(e.target.value)}
-                placeholder="Min. 8 characters"
+                placeholder={tr('pwd.minPlaceholder')}
                 style={inputStyle}
               />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: t.textSecondary, marginBottom: 8 }}>
-                Confirm new password
+                {tr('pwd.confirm')}
               </label>
               <input
                 type="password" value={confirmPw}
                 onChange={e => setConfirmPw(e.target.value)}
-                placeholder="Repeat new password"
+                placeholder={tr('pwd.repeatPlaceholder')}
                 style={inputStyle}
               />
             </div>
@@ -140,7 +142,7 @@ export default function ResetPasswordPage() {
                 opacity: loading || !newPw || !confirmPw ? 0.5 : 1,
               }}
             >
-              {loading ? 'Updating...' : 'Update password'}
+              {loading ? tr('pwd.updating') : tr('pwd.update')}
             </button>
           </div>
         )}
@@ -148,7 +150,7 @@ export default function ResetPasswordPage() {
         {success && (
           <div style={{ textAlign: 'center', padding: '20px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 12 }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>✅</div>
-            <p style={{ color: '#16a34a', fontWeight: 500 }}>Password updated! Redirecting...</p>
+            <p style={{ color: '#16a34a', fontWeight: 500 }}>{tr('pwd.updated')}</p>
           </div>
         )}
 
@@ -156,7 +158,7 @@ export default function ResetPasswordPage() {
           <div style={{ textAlign: 'center' }}>
             <p style={{ color: '#ef4444', marginBottom: 16, fontSize: 14 }}>⚠ {error}</p>
             <button onClick={() => navigate('/auth')} style={{ color: t.textMuted, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, textDecoration: 'underline' }}>
-              Back to login
+              {tr('pwd.backLogin')}
             </button>
           </div>
         )}

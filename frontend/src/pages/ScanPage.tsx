@@ -4,6 +4,8 @@ import { scansApi } from '../api/scans'
 import { supabase } from '../lib/supabase'
 import { useTheme, getTokens } from '../hooks/useTheme'
 import AppLayout from '../components/Layout/AppLayout'
+import { useI18n } from '../hooks/useI18n'
+import type { TranslationKey } from '../i18n/translations'
 
 interface ProgressState {
   message: string
@@ -12,13 +14,13 @@ interface ProgressState {
   status: string
 }
 
-const PIPELINE_STEPS = [
-  'Cloning repository...',
-  'Scanning for secrets and credentials...',
-  'Analyzing code structure...',
-  'Running deep analysis...',
-  'Calculating security score...',
-  'Scan complete',
+const PIPELINE_STEPS: TranslationKey[] = [
+  'scan.stepClone',
+  'scan.stepSecrets',
+  'scan.stepStructure',
+  'scan.stepDeep',
+  'scan.stepScore',
+  'scan.complete',
 ]
 
 export default function ScanPage() {
@@ -31,6 +33,7 @@ export default function ScanPage() {
   const navigate = useNavigate()
   const { isDark } = useTheme()
   const t = getTokens(isDark)
+  const { t: tr } = useI18n()
 
   // Primary mechanism: poll every 2s
   useEffect(() => {
@@ -42,7 +45,7 @@ export default function ScanPage() {
         if (report.status === 'completed') {
           setProgress(prev => ({
             ...(prev ?? { message: '', partial_findings: 0 }),
-            message: 'Scan complete',
+            message: tr('scan.complete'),
             progress_pct: 100,
             partial_findings: report.total_vulnerabilities,
             status: 'completed',
@@ -51,7 +54,7 @@ export default function ScanPage() {
           setTimeout(() => navigate(`/report/${scanId}`), 1200)
         } else if (report.status === 'failed') {
           setProgress({
-            message: report.error_message ?? 'Scan failed.',
+            message: report.error_message ?? tr('scan.failedGeneric'),
             progress_pct: 0,
             partial_findings: 0,
             status: 'failed',
@@ -65,7 +68,7 @@ export default function ScanPage() {
 
     pollInterval.current = setInterval(poll, 2000)
     return () => clearInterval(pollInterval.current!)
-  }, [scanId, navigate])
+  }, [scanId, navigate, tr])
 
   // Bonus: Supabase Realtime for live progress percentage
   useEffect(() => {
@@ -96,9 +99,9 @@ export default function ScanPage() {
     try {
       const result = await scansApi.create({ repo_url: repoUrl.trim() })
       setScanId(result.scan_id)
-      setProgress({ message: 'Scan queued — starting shortly...', progress_pct: 2, partial_findings: 0, status: 'queued' })
+      setProgress({ message: tr('scan.queued'), progress_pct: 2, partial_findings: 0, status: 'queued' })
     } catch (err: any) {
-      const msg = err?.response?.data?.detail ?? 'Failed to start scan.'
+      const msg = err?.response?.data?.detail ?? tr('scan.startError')
       setError(typeof msg === 'string' ? msg : JSON.stringify(msg))
       setLoading(false)
     }
@@ -130,10 +133,10 @@ export default function ScanPage() {
             fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 300,
             letterSpacing: '-1px', color: t.text, marginBottom: 8,
           }}>
-            New <span style={{ fontWeight: 600 }}>Scan</span>
+            {tr('scan.titleLight')} <span style={{ fontWeight: 600 }}>{tr('scan.titleBold')}</span>
           </h1>
           <p style={{ fontSize: 15, color: t.textSecondary }}>
-            Submit any public GitHub repository URL for vulnerability analysis.
+            {tr('scan.subtitle')}
           </p>
         </div>
 
@@ -146,7 +149,7 @@ export default function ScanPage() {
             display: 'block', fontSize: 13, fontWeight: 500,
             color: t.textSecondary, marginBottom: 10,
           }}>
-            GitHub Repository URL
+            {tr('scan.urlLabel')}
           </label>
           <div style={{ display: 'flex', gap: 10 }}>
             <input
@@ -179,7 +182,7 @@ export default function ScanPage() {
                 transition: 'opacity 0.2s',
               }}
             >
-              {loading ? 'Starting...' : 'Scan'}
+              {loading ? tr('scan.starting') : tr('scan.button')}
             </button>
           </div>
 
@@ -206,7 +209,7 @@ export default function ScanPage() {
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <span style={{ fontSize: 13, fontWeight: 500, color: t.textSecondary }}>
-                  {isFailed ? 'Scan failed' : isComplete ? 'Analysis complete' : 'Analyzing...'}
+                  {isFailed ? tr('scan.failed') : isComplete ? tr('scan.analysisComplete') : tr('scan.analyzing')}
                 </span>
                 <span style={{ fontSize: 14, fontWeight: 600, color: t.text, fontFamily: "'DM Mono', monospace" }}>
                   {displayPct}%
@@ -256,7 +259,7 @@ export default function ScanPage() {
                     <span style={{ color: isDone ? '#22c55e' : t.textMuted, flexShrink: 0 }}>
                       {isDone ? '✓' : isCurrent ? '▶' : '○'}
                     </span>
-                    {step}
+                    {tr(step)}
                   </div>
                 )
               })}
@@ -287,7 +290,7 @@ export default function ScanPage() {
                 onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
                 onMouseLeave={e => e.currentTarget.style.opacity = '1'}
               >
-                View full report →
+                {tr('scan.viewReport')}
               </button>
             )}
 
@@ -316,10 +319,10 @@ export default function ScanPage() {
             animation: 'fadeIn 0.5s ease 0.1s both',
           }}>
             {[
-              { icon: '🔒', title: 'Sandboxed', desc: 'No code is executed from the scanned repository' },
-              { icon: '⚡', title: 'Fast', desc: 'Most repositories complete in under 30 seconds' },
-              { icon: '📋', title: 'Detailed', desc: 'Every finding includes file, line, and fix advice' },
-              { icon: '🎯', title: 'Accurate', desc: 'Three analysis layers reduce false positives' },
+              { icon: '🔒', title: tr('scan.infoSandboxTitle'), desc: tr('scan.infoSandboxDesc') },
+              { icon: '⚡', title: tr('scan.infoFastTitle'), desc: tr('scan.infoFastDesc') },
+              { icon: '📋', title: tr('scan.infoDetailTitle'), desc: tr('scan.infoDetailDesc') },
+              { icon: '🎯', title: tr('scan.infoAccurateTitle'), desc: tr('scan.infoAccurateDesc') },
             ].map(card => (
               <div key={card.title} style={{
                 background: t.cardBg, border: `1px solid ${t.cardBorder}`,

@@ -28,6 +28,22 @@ export interface VulnerabilityItem {
   owasp_category?: string
 }
 
+/** Uma página da lista de análises. */
+export interface ScanListPage {
+  items: ScanListItem[]
+  total: number
+  limit: number
+  offset: number
+}
+
+/** Agregados de todas as análises, independentes da página exibida. */
+export interface ScanStats {
+  total_scans: number
+  completed: number
+  average_score: number | null
+  total_vulnerabilities: number
+}
+
 export interface ScanReport extends ScanListItem {
   scanned_files: number
   scan_duration_seconds: number | null
@@ -62,11 +78,23 @@ async function handleResponse<T>(res: Response): Promise<T> {
 // ── API ────────────────────────────────────────────────────────────────────────
 
 export const scansApi = {
-  /** List all scans (returns newest first) */
-  list: async (): Promise<ScanListItem[]> => {
+  /** Lista uma página de análises, da mais recente para a mais antiga. */
+  list: async (params: { limit?: number; offset?: number; repoUrl?: string } = {}): Promise<ScanListPage> => {
     const headers = await authHeaders()
-    const res = await fetch(`${API}/api/v1/scans`, { headers })
-    return handleResponse<ScanListItem[]>(res)
+    const query = new URLSearchParams()
+    if (params.limit !== undefined) query.set('limit', String(params.limit))
+    if (params.offset !== undefined) query.set('offset', String(params.offset))
+    if (params.repoUrl) query.set('repo_url', params.repoUrl)
+    const qs = query.toString()
+    const res = await fetch(`${API}/api/v1/scans${qs ? `?${qs}` : ''}`, { headers })
+    return handleResponse<ScanListPage>(res)
+  },
+
+  /** Números agregados de todas as análises do usuário. */
+  stats: async (): Promise<ScanStats> => {
+    const headers = await authHeaders()
+    const res = await fetch(`${API}/api/v1/scans/stats`, { headers })
+    return handleResponse<ScanStats>(res)
   },
 
   /** Get a single scan with full vulnerability details */
