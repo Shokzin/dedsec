@@ -247,21 +247,36 @@ export default function ReportPage() {
             )}
             {report.status === 'completed' && (
               <div style={{ marginTop: 14 }}>
-                <button
-                  onClick={handleExport}
-                  disabled={exporting}
-                  style={{
-                    background: 'transparent', color: t.text,
-                    border: `1.5px solid ${t.border}`, borderRadius: 6,
-                    padding: '8px 16px', fontSize: 13, fontWeight: 500,
-                    fontFamily: 'inherit', cursor: exporting ? 'default' : 'pointer',
-                    opacity: exporting ? 0.6 : 1, transition: 'border-color 0.2s',
-                  }}
-                  onMouseEnter={e => { if (!exporting) e.currentTarget.style.borderColor = t.text }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = t.border }}
-                >
-                  {exporting ? 'Generating PDF...' : 'Export PDF'}
-                </button>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button
+                    onClick={handleExport}
+                    disabled={exporting}
+                    style={{
+                      background: 'transparent', color: t.text,
+                      border: `1.5px solid ${t.border}`, borderRadius: 6,
+                      padding: '8px 16px', fontSize: 13, fontWeight: 500,
+                      fontFamily: 'inherit', cursor: exporting ? 'default' : 'pointer',
+                      opacity: exporting ? 0.6 : 1, transition: 'border-color 0.2s',
+                    }}
+                    onMouseEnter={e => { if (!exporting) e.currentTarget.style.borderColor = t.text }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = t.border }}
+                  >
+                    {exporting ? 'Generating PDF...' : 'Export PDF'}
+                  </button>
+                  <button
+                    onClick={() => navigate(`/compare/${scanId}`)}
+                    style={{
+                      background: 'transparent', color: t.text,
+                      border: `1.5px solid ${t.border}`, borderRadius: 6,
+                      padding: '8px 16px', fontSize: 13, fontWeight: 500,
+                      fontFamily: 'inherit', cursor: 'pointer', transition: 'border-color 0.2s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = t.text }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = t.border }}
+                  >
+                    Compare scans
+                  </button>
+                </div>
                 {exportError && (
                   <p style={{ fontSize: 12, color: '#dc2626', marginTop: 8 }}>{exportError}</p>
                 )}

@@ -1,7 +1,8 @@
 """
 DedSec CLI: scan local de vulnerabilidades (camadas Regex + AST).
 
-Roda só com a biblioteca padrão do Python (3.10+), sem rede, sem Docker e sem IA.
+Roda só com a biblioteca padrão do Python (3.11+, por causa da leitura do .dedsec.toml),
+sem rede, sem Docker e sem IA.
 
 Uso, a partir da pasta backend/:
 
@@ -339,11 +340,11 @@ cd "$ROOT" || exit 0
 SCANNER_DIR={scanner_dir}
 [ -d "$SCANNER_DIR/scanner" ] || {{ echo "DedSec: pasta do scanner nao encontrada; scan ignorado." >&2; exit 0; }}
 for PY in python python3 py; do
-  if command -v "$PY" >/dev/null 2>&1 && "$PY" -c "import sys; sys.exit(sys.version_info < (3, 10))" >/dev/null 2>&1; then
+  if command -v "$PY" >/dev/null 2>&1 && "$PY" -c "import sys; sys.exit(sys.version_info < (3, 11))" >/dev/null 2>&1; then
     exec "$PY" -c "import sys; sys.path.insert(0, sys.argv[1]); del sys.argv[1]; from scanner.cli import main; sys.exit(main())" "$SCANNER_DIR" scan --staged
   fi
 done
-echo "DedSec: Python 3.10+ nao encontrado; scan ignorado." >&2
+echo "DedSec: Python 3.11+ nao encontrado; scan ignorado." >&2
 exit 0
 """
 

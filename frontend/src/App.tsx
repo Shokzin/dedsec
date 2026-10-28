@@ -6,6 +6,7 @@ import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
 import ScanPage from './pages/ScanPage'
 import ReportPage from './pages/ReportPage'
+import ComparePage from './pages/ComparePage'
 import ProfilePage from './pages/ProfilePage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 
@@ -37,6 +38,7 @@ function AppRoutes() {
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/scan" element={<ProtectedRoute><ScanPage /></ProtectedRoute>} />
       <Route path="/report/:scanId" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
+      <Route path="/compare/:scanId" element={<ProtectedRoute><ComparePage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
