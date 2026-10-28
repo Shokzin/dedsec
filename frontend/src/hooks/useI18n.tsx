@@ -6,6 +6,8 @@ export const LANGUAGES: { code: Lang; label: string; short: string; locale: stri
   { code: 'en', label: 'English',   short: 'EN', locale: 'en-US' },
   { code: 'es', label: 'Español',   short: 'ES', locale: 'es-ES' },
   { code: 'ru', label: 'Русский',   short: 'RU', locale: 'ru-RU' },
+  { code: 'it', label: 'Italiano',  short: 'IT', locale: 'it-IT' },
+  { code: 'fr', label: 'Français',  short: 'FR', locale: 'fr-FR' },
 ]
 
 const STORAGE_KEY = 'dedsec-lang'

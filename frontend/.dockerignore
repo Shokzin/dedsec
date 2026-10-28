@@ -1,0 +1,22 @@
+# Dependencias instaladas no host (VS Code). O conteiner instala as
+# proprias via Dockerfile, e o compose sombreia esta pasta com um
+# volume anonimo (/app/node_modules), entao mandar ela no contexto de
+# build so deixa o build lento e quebra nos links simbolicos de .bin/.
+node_modules
+
+# Resultado de build local
+dist
+dist-preview
+.vite
+
+# Segredos: o compose le o .env em tempo de execucao (env_file),
+# nunca deve entrar numa camada da imagem.
+.env
+.env.*
+!.env.example
+
+# Ruido
+.DS_Store
+*.log
+npm-debug.log*
+coverage

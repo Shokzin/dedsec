@@ -5,6 +5,7 @@ import { useI18n } from '../hooks/useI18n'
 import type { TranslationKey } from '../i18n/translations'
 import { useAuth } from '../hooks/useAuth'
 import ThemeToggle from '../components/ThemeToggle'
+import LanguageSelect from '../components/LanguageSelect'
 
 // ─── Bidirectional reveal ──────────────────────────────────────────────────
 function useReveal(threshold = 0.15) {
@@ -83,10 +84,10 @@ const STACK_ITEMS: { name: string; color: string; roleKey: TranslationKey; descK
 ]
 
 const SCAN_EXAMPLES = [
-  { repo: 'acme-corp / backend-api', branch: 'main', duration: '8.4s', files: 42, score: 73, scoreColor: '#f59e0b', scoreLabel: 'Moderate', critical: 2, high: 5, medium: 8, low: 3, tag: 'Node.js' },
-  { repo: 'startup-x / mobile-gateway', branch: 'develop', duration: '5.1s', files: 28, score: 54, scoreColor: '#ef4444', scoreLabel: 'Vulnerable', critical: 4, high: 9, medium: 3, low: 1, tag: 'Python' },
-  { repo: 'devteam / auth-service', branch: 'main', duration: '12.2s', files: 71, score: 91, scoreColor: '#22c55e', scoreLabel: 'Secure', critical: 0, high: 1, medium: 4, low: 2, tag: 'Go' },
-]
+  { repo: 'acme-corp / backend-api', branch: 'main', duration: '8.4s', files: 42, score: 73, scoreColor: '#f59e0b', scoreLabelKey: 'report.scoreModerate', critical: 2, high: 5, medium: 8, low: 3, tag: 'Node.js' },
+  { repo: 'startup-x / mobile-gateway', branch: 'develop', duration: '5.1s', files: 28, score: 54, scoreColor: '#ef4444', scoreLabelKey: 'report.scoreVulnerable', critical: 4, high: 9, medium: 3, low: 1, tag: 'Python' },
+  { repo: 'devteam / auth-service', branch: 'main', duration: '12.2s', files: 71, score: 91, scoreColor: '#22c55e', scoreLabelKey: 'report.scoreSecure', critical: 0, high: 1, medium: 4, low: 2, tag: 'Go' },
+] as const
 
 // ─── Stack Carousel ────────────────────────────────────────────────────────
 function StackCarousel({ t }: { t: ReturnType<typeof getTokens> }) {
@@ -161,7 +162,7 @@ function ScanCarousel({ t }: { t: ReturnType<typeof getTokens> }) {
         <div>
           <div style={{ fontSize: 11, color: t.textMuted, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tr('land.securityScore')}</div>
           <div style={{ fontSize: 48, fontWeight: 600, lineHeight: 1, color: t.text }}>{scan.score}<span style={{ fontSize: 20, fontWeight: 400, color: t.textMuted }}>/100</span></div>
-          <div style={{ fontSize: 12, color: scan.scoreColor, fontWeight: 600, marginTop: 4 }}>{scan.scoreLabel}</div>
+          <div style={{ fontSize: 12, color: scan.scoreColor, fontWeight: 600, marginTop: 4 }}>{tr(scan.scoreLabelKey)}</div>
         </div>
         <svg width="72" height="72" viewBox="0 0 72 72">
           <circle cx="36" cy="36" r="28" fill="none" stroke={t.border} strokeWidth="6" />
@@ -268,6 +269,7 @@ export default function LandingPage() {
               <button key={id} className="nav-link" onClick={() => scrollTo(id)}>{label}</button>
             ))}
             <div style={{ width: 1, height: 20, background: t.border }} />
+            <LanguageSelect />
             <ThemeToggle />
             {/* ── Auth-aware nav buttons ── */}
             {user ? (
@@ -303,14 +305,15 @@ export default function LandingPage() {
 
         {menuOpen && (
           <div style={{ background: t.bg, borderTop: `1px solid ${t.borderLight}`, padding: '20px 5%', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {['features', 'how-it-works', 'stack', 'about'].map(id => (
+            {[{ id: 'features', label: tr('land.navFeatures') }, { id: 'how-it-works', label: tr('land.navHow') }, { id: 'stack', label: tr('land.navStack') }, { id: 'about', label: tr('land.navAbout') }].map(({ id, label }) => (
               <button key={id} className="nav-link" style={{ textAlign: 'left' }} onClick={() => scrollTo(id)}>
-                {id.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                {label}
               </button>
             ))}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <ThemeToggle />
               <span style={{ fontSize: 13, color: t.textSecondary }}>{isDark ? tr('land.darkMode') : tr('land.lightMode')}</span>
+              <LanguageSelect />
             </div>
             {user ? (
               <button onClick={() => { navigate('/dashboard'); setMenuOpen(false) }} style={{ ...navCTAStyle, padding: '12px 24px', fontSize: 14 }}>

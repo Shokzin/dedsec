@@ -6,6 +6,7 @@ import { useI18n } from '../hooks/useI18n'
 import type { TranslationKey } from '../i18n/translations'
 import { supabase } from '../lib/supabase'
 import ThemeToggle from '../components/ThemeToggle'
+import LanguageSelect from '../components/LanguageSelect'
 
 type Mode = 'login' | 'register' | 'reset_form'
 
@@ -265,6 +266,7 @@ useEffect(() => {
               </button>
             </>
           )}
+          <LanguageSelect />
           <ThemeToggle />
         </div>
       </div>

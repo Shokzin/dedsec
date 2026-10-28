@@ -1,0 +1,22 @@
+# Cache e ambiente virtual criados no host
+__pycache__
+*.py[cod]
+*.egg-info
+.venv
+venv
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Segredos: o compose le o .env da raiz em tempo de execucao,
+# nunca deve entrar numa camada da imagem.
+.env
+.env.*
+!.env.example
+
+# Ruido
+.DS_Store
+*.log
+coverage
+.coverage
+htmlcov

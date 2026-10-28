@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useTheme, getTokens } from '../hooks/useTheme'
 import { useI18n } from '../hooks/useI18n'
+import LanguageSelect from '../components/LanguageSelect'
 
 export default function ResetPasswordPage() {
   const { t: tr } = useI18n()
@@ -82,7 +83,13 @@ export default function ResetPasswordPage() {
       minHeight: '100vh', background: t.bg, color: t.text,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+      position: 'relative',
     }}>
+      {/* esta tela nao usa o AppLayout, entao o seletor entra solto no canto */}
+      <div style={{ position: 'absolute', top: 20, right: 24 }}>
+        <LanguageSelect />
+      </div>
+
       <div style={{ width: '100%', maxWidth: 400, padding: '0 24px' }}>
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
