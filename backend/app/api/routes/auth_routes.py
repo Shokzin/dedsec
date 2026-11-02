@@ -1,54 +1,36 @@
 """
-auth_routes.py — Authentication utility endpoints.
+auth_routes.py — endpoints de conta.
 
-Uses python-jose (already in requirements.txt as python-jose[cryptography]==3.3.0).
-No new dependencies required.
+A identidade vem de app.core.security, que valida a assinatura do token no
+Supabase. Ler as claims sem verificar a assinatura permitiria forjar o campo
+"sub"; como estas rotas usam a chave service_role, isso daria a qualquer
+pessoa o poder de apagar a conta de outra.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status
 from supabase import Client
 from app.core.supabase import get_supabase
-from jose import jwt as jose_jwt
+from app.core.security import get_current_user_id, limpar_cache_de_sessao
+from app.core.config import get_settings
+from app.core.rate_limit import limitar
+
+_lim = get_settings()
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def _get_user_id(request: Request) -> str:
-    """
-    Extract user_id (sub claim) from the JWT Bearer token.
-    Uses jose_jwt.get_unverified_claims() — no key/algorithm needed,
-    safe because Supabase already validated the token before it reached us.
-    """
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing or invalid Authorization header.",
-        )
-    token = auth.removeprefix("Bearer ").strip()
-    try:
-        # get_unverified_claims reads the payload without verifying signature
-        claims = jose_jwt.get_unverified_claims(token)
-        user_id = claims.get("sub")
-        if not user_id:
-            raise ValueError("No sub claim in token")
-        return user_id
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token.",
-        )
-
-
-@router.delete("/delete-account", status_code=status.HTTP_200_OK)
+@router.delete(
+    "/delete-account",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(limitar(_lim.rate_limit_conta_hora, 3600, "remover-conta"))],
+)
 async def delete_account(
-    request: Request,
     db: Client = Depends(get_supabase),
+    user_id: str = Depends(get_current_user_id),
 ) -> dict:
     """
-    Permanently delete the authenticated user's account and all scan data.
-    Uses the service role key (via get_supabase) to delete from Supabase Auth.
+    Apaga definitivamente a conta de quem chamou e todos os dados de analise.
+    O identificador vem do token ja verificado, nunca do corpo da requisicao.
     """
-    user_id = _get_user_id(request)
 
     # Delete scan data first (cascades to vulnerabilities + scan_progress)
     try:
@@ -65,24 +47,42 @@ async def delete_account(
             detail=f"Failed to delete account: {str(e)}",
         )
 
+    limpar_cache_de_sessao()
     return {"message": "Account deleted successfully."}
 
 
-@router.delete("/scans/{scan_id}", status_code=status.HTTP_200_OK)
+@router.delete(
+    "/scans/{scan_id}",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(limitar(_lim.rate_limit_remocao_min, 60, "remover-analise"))],
+)
 async def delete_scan(
     scan_id: str,
-    request: Request,
     db: Client = Depends(get_supabase),
+    user_id: str = Depends(get_current_user_id),
 ) -> dict:
-    """Delete a specific scan and its associated data from history."""
-    _get_user_id(request)  # Validates token is present and valid
+    """
+    Apaga uma analise do historico de quem chamou.
 
-    result = db.table("scans").select("id").eq("id", scan_id).maybe_single().execute()
-    if not result.data:
+    A consulta e a remocao filtram por user_id alem do scan_id. Sem esse filtro,
+    conhecer o identificador de uma analise alheia bastaria para apaga-la, ja que
+    a chave service_role ignora as politicas de seguranca do banco (IDOR).
+    Uma analise de outro usuario responde 404, e nao 403, para nao revelar que
+    aquele identificador existe.
+    """
+    result = (
+        db.table("scans")
+        .select("id")
+        .eq("id", scan_id)
+        .eq("user_id", user_id)
+        .maybe_single()
+        .execute()
+    )
+    if not result or not result.data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Scan not found.",
         )
 
-    db.table("scans").delete().eq("id", scan_id).execute()
+    db.table("scans").delete().eq("id", scan_id).eq("user_id", user_id).execute()
     return {"message": "Scan deleted."}

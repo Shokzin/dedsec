@@ -18,7 +18,6 @@ const PIPELINE_STEPS: TranslationKey[] = [
   'scan.stepClone',
   'scan.stepSecrets',
   'scan.stepStructure',
-  'scan.stepDeep',
   'scan.stepScore',
   'scan.complete',
 ]
@@ -101,6 +100,16 @@ export default function ScanPage() {
       setScanId(result.scan_id)
       setProgress({ message: tr('scan.queued'), progress_pct: 2, partial_findings: 0, status: 'queued' })
     } catch (err: any) {
+      // 429 vem do limitador da API. A mensagem do servidor nao acompanha o
+      // idioma escolhido, entao aqui ela e montada com o Retry-After.
+      if (err?.response?.status === 429) {
+        const espera = Number(err.response.headers?.['retry-after'])
+        setError(Number.isFinite(espera) && espera > 0
+          ? tr('errors.rateLimitedIn', { seconds: espera })
+          : tr('errors.rateLimited'))
+        setLoading(false)
+        return
+      }
       const msg = err?.response?.data?.detail ?? tr('scan.startError')
       setError(typeof msg === 'string' ? msg : JSON.stringify(msg))
       setLoading(false)

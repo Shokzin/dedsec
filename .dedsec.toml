@@ -14,7 +14,6 @@ ignore_paths = [
   "backend/scanner/engine/ast_analyzer.py",
   # Falso positivo da regra de IDOR, que confunde Finding(id=...) com uma busca por ID.
   # Remover daqui quando a regra for corrigida.
-  "backend/scanner/engine/ai_analyzer.py",
 ]
 
 # Silencia um tipo de achado no projeto todo, por CWE ou por "type". Vazio por enquanto.

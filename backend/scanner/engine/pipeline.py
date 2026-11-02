@@ -6,7 +6,6 @@ from typing import Callable
 from scanner.engine.git_fetcher import GitFetcher
 from scanner.engine.pattern_scanner import PatternScanner
 from scanner.engine.ast_analyzer import ASTAnalyzer
-from scanner.engine.ai_analyzer import AIAnalyzer
 from scanner.engine.scorer import SecurityScorer
 import structlog
 
@@ -49,17 +48,12 @@ class ScanPipeline:
         self.progress("Scanning for secrets and credentials...", 30)
         pattern_findings = PatternScanner().scan(repo_path, file_list)
         all_vulns.extend(pattern_findings)
-        self.progress(f"Pattern scan done — {len(pattern_findings)} findings", 45, len(all_vulns))
+        self.progress(f"Pattern scan done — {len(pattern_findings)} findings", 55, len(all_vulns))
 
-        self.progress("Analyzing code structure...", 50)
+        self.progress("Analyzing code structure...", 60)
         ast_findings = ASTAnalyzer().analyze(repo_path, file_list)
         all_vulns.extend(ast_findings)
-        self.progress(f"AST analysis done — {len(ast_findings)} findings", 65, len(all_vulns))
-
-        self.progress("Running AI-enhanced deep analysis...", 70)
-        ai_findings = AIAnalyzer().analyze(repo_path, file_list)
-        all_vulns.extend(ai_findings)
-        self.progress(f"AI analysis done — {len(ai_findings)} findings", 90, len(all_vulns))
+        self.progress(f"AST analysis done — {len(ast_findings)} findings", 90, len(all_vulns))
 
         self.progress("Calculating security score...", 95)
         unique_vulns = self._deduplicate(all_vulns)

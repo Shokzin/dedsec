@@ -246,7 +246,7 @@ export function buildReportPdf(report: ScanReport): jsPDF {
     doc.text('No vulnerabilities found', PAGE_W / 2, y + 15, { align: 'center' })
     font('helvetica', 'normal', 10)
     setText(MUTED)
-    doc.text('This repository looks clean across all analysis layers.', PAGE_W / 2, y + 23, { align: 'center' })
+    doc.text('This repository looks clean across both analysis layers.', PAGE_W / 2, y + 23, { align: 'center' })
     y += 34
   } else {
     // ── tabela-resumo ───────────────────────────────────────────────────────
@@ -389,7 +389,7 @@ export function buildReportPdf(report: ScanReport): jsPDF {
     font('helvetica', 'italic', 8)
     setText(MUTED)
     wrap(
-      'This report was generated automatically by DedSec using pattern matching, AST analysis and AI-assisted review. ' +
+      'This report was generated automatically by DedSec using pattern matching and AST analysis. ' +
       'Automated tools can report false positives: review each finding before acting on it.',
       CONTENT_W, 3,
     ).forEach(l => { doc.text(l, MARGIN, y); y += lineHeight(8) })

@@ -1,0 +1,36 @@
+# Imagem de producao da API.
+#
+# Difere da imagem de desenvolvimento em tres pontos: nao traz compiladores,
+# roda como usuario sem privilegios e sobe pelo start.sh, que inicia o
+# trabalhador do Celery junto da API.
+FROM python:3.11-slim
+
+# git e indispensavel em tempo de execucao: o scanner clona os repositorios
+# analisados. As demais bibliotecas do sistema sao exigidas pelo gitpython.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Camada separada: so refaz a instalacao quando as dependencias mudarem.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# Um processo com privilegios de root analisando codigo de terceiros seria um
+# risco desnecessario, mesmo o scanner nunca executando o que le.
+RUN useradd --create-home --shell /bin/bash dedsec \
+    && mkdir -p /tmp/scans \
+    && chown -R dedsec:dedsec /app /tmp/scans \
+    && chmod +x /app/start.sh
+USER dedsec
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    SCAN_TMP_DIR=/tmp/scans
+
+EXPOSE 8000
+CMD ["/app/start.sh"]

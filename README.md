@@ -145,7 +145,6 @@ Frontend receives real-time updates via Supabase Realtime + polling fallback
 - [x] Custom branded email templates via Resend
 
 **Semester 2 — planned 🔜**
-- [ ] AI layer — AI integration for context-aware analysis
 - [ ] 10 new detection rules (Open Redirect, JWT None Algorithm, Prototype Pollution, and more)
 - [ ] Export report as PDF
 - [ ] Compare two scans — diff between runs

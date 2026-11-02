@@ -1,0 +1,54 @@
+# Blueprint da hospedagem do backend.
+#
+# Descreve a API e o Redis. O frontend nao entra aqui: e um conjunto de
+# arquivos estaticos, publicado na Vercel (ver docs/deploy.md).
+#
+# As variaveis marcadas com "sync: false" nao ficam neste arquivo porque sao
+# segredos; elas sao preenchidas uma unica vez no painel, no primeiro deploy.
+services:
+  - type: web
+    name: dedsec-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile.prod
+    dockerContext: ./backend
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SCAN_TMP_DIR
+        value: /tmp/scans
+      - key: CELERY_CONCURRENCY
+        value: "2"
+
+      # Endereco do Redis, preenchido pela propria hospedagem.
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: dedsec-redis
+          property: connectionString
+
+      # Origens autorizadas no CORS. Aceita uma lista separada por virgula.
+      # Preencher com o endereco do frontend apos publicar na Vercel.
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+      # Segredos do Supabase.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+
+  - type: keyvalue
+    name: dedsec-redis
+    plan: free
+    region: oregon
+    # A fila nao pode perder tarefas por limite de memoria: sem isto, uma
+    # analise enfileirada poderia ser descartada silenciosamente.
+    maxmemoryPolicy: noeviction
+    ipAllowList: []   # alcancavel apenas pelos servicos do mesmo projeto

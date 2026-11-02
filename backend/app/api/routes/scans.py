@@ -1,37 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Header
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Optional
-import base64
-import json
 import uuid
 from datetime import datetime, timezone
 from app.models.scan import (
     ScanCreateRequest, ScanReport, ScanListItem, ScanListPage, ScanStats, ScanStatus,
 )
 from app.core.supabase import get_supabase
+from app.core.security import get_current_user_id
+from app.core.config import get_settings
+from app.core.rate_limit import limitar
+
+_lim = get_settings()
 from supabase import Client
 
 router = APIRouter(prefix="/scans", tags=["scans"])
 
 
-def get_current_user_id(authorization: Optional[str] = Header(None)) -> str:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing token")
-    token = authorization.split(" ", 1)[1]
-    try:
-        # JWT = header.payload.signature — we just need the payload
-        payload_b64 = token.split(".")[1]
-        # Pad base64 string to valid length
-        payload_b64 += "=" * (4 - len(payload_b64) % 4)
-        payload = json.loads(base64.urlsafe_b64decode(payload_b64))
-        user_id = payload.get("sub")
-        if not user_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-        return user_id
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-
-
-@router.post("", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "",
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[
+        Depends(limitar(_lim.rate_limit_criar_analise_min, 60, "criar-analise-min")),
+        Depends(limitar(_lim.rate_limit_criar_analise_hora, 3600, "criar-analise-hora")),
+    ],
+)
 async def create_scan(
     request: ScanCreateRequest,
     db: Client = Depends(get_supabase),
@@ -55,7 +47,8 @@ async def create_scan(
     return {"scan_id": scan_id, "status": ScanStatus.QUEUED.value}
 
 
-@router.get("", response_model=ScanListPage)
+@router.get("", response_model=ScanListPage,
+            dependencies=[Depends(limitar(_lim.rate_limit_leitura_min, 60, "leitura"))])
 async def list_scans(
     limit: int = Query(default=10, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -100,7 +93,8 @@ async def list_scans(
 
 
 # Precisa vir antes de "/{scan_id}", senão "stats" seria lido como um identificador.
-@router.get("/stats", response_model=ScanStats)
+@router.get("/stats", response_model=ScanStats,
+            dependencies=[Depends(limitar(_lim.rate_limit_leitura_min, 60, "leitura"))])
 async def scan_stats(
     db: Client = Depends(get_supabase),
     user_id: str = Depends(get_current_user_id),
@@ -125,7 +119,8 @@ async def scan_stats(
     )
 
 
-@router.get("/{scan_id}", response_model=ScanReport)
+@router.get("/{scan_id}", response_model=ScanReport,
+            dependencies=[Depends(limitar(_lim.rate_limit_leitura_min, 60, "leitura"))])
 async def get_scan(
     scan_id: str,
     db: Client = Depends(get_supabase),

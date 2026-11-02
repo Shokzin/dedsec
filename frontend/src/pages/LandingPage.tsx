@@ -369,7 +369,7 @@ export default function LandingPage() {
       <section style={{ padding: '60px 5%', borderTop: `1px solid ${t.borderLight}`, borderBottom: `1px solid ${t.borderLight}`, background: t.bgSecondary }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 40, textAlign: 'center' }}>
-            {[{ value: 12, suffix: '+', label: tr('land.metricCategories') }, { value: 3, suffix: '', label: tr('land.metricDepth') }, { value: 100, suffix: ' pts', label: tr('land.metricRange') }, { value: 8, suffix: 's', label: tr('land.metricDuration') }].map(s => (
+            {[{ value: 12, suffix: '+', label: tr('land.metricCategories') }, { value: 2, suffix: '', label: tr('land.metricDepth') }, { value: 100, suffix: ' pts', label: tr('land.metricRange') }, { value: 8, suffix: 's', label: tr('land.metricDuration') }].map(s => (
               <Reveal key={s.label}>
                 <div style={{ fontSize: 40, fontWeight: 600, letterSpacing: '-1px', lineHeight: 1 }}>
                   <Counter target={s.value} suffix={s.suffix} color={t.text} />
