@@ -17,9 +17,9 @@ class LocalScanner:
     """
     Scanner leve para uso local (CLI, extensão do VS Code, hook de pre-commit).
 
-    Roda as camadas Regex e AST sobre texto em memória. Não clona repositório,
-    não usa Celery/Supabase e não chama a camada de IA, então responde em
-    milissegundos e funciona offline.
+    Roda as camadas Regex e AST sobre texto em memória. Não clona repositório
+    e não usa Celery/Supabase, então responde em milissegundos e funciona
+    offline.
 
         scanner = LocalScanner()
         findings = scanner.scan_content(texto_do_arquivo, "src/app.py")
