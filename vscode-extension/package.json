@@ -1,18 +1,31 @@
 {
   "name": "dedsec",
   "displayName": "DedSec",
-  "description": "Mostra vulnerabilidades de segurança direto no editor, antes do commit.",
-  "version": "0.1.0",
+  "description": "Mostra vulnerabilidades de seguranca direto no editor, antes do commit. Traz o scanner embutido; precisa apenas de Python 3.11+ instalado.",
+  "version": "0.2.0",
   "publisher": "dedsec",
   "license": "UNLICENSED",
-  "engines": { "vscode": "^1.80.0" },
-  "categories": ["Linters", "Other"],
-  "activationEvents": ["onStartupFinished"],
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./extension.js",
   "contributes": {
     "commands": [
-      { "command": "dedsec.scanFile", "title": "DedSec: Analisar arquivo atual" },
-      { "command": "dedsec.scanWorkspace", "title": "DedSec: Analisar projeto inteiro" }
+      {
+        "command": "dedsec.scanFile",
+        "title": "DedSec: Analisar arquivo atual"
+      },
+      {
+        "command": "dedsec.scanWorkspace",
+        "title": "DedSec: Analisar projeto inteiro"
+      }
     ],
     "configuration": {
       "title": "DedSec",
@@ -29,11 +42,18 @@
         },
         "dedsec.runOn": {
           "type": "string",
-          "enum": ["type", "save"],
+          "enum": [
+            "type",
+            "save"
+          ],
           "default": "type",
           "description": "Quando analisar: enquanto digita ('type') ou só ao salvar ('save')."
         }
       }
     }
+  },
+  "scripts": {
+    "build": "node build.js",
+    "package": "node build.js && npx --yes @vscode/vsce package --no-dependencies"
   }
 }

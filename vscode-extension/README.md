@@ -9,4 +9,25 @@ antes de qualquer commit. Usa o scanner local do DedSec (Regex + AST), sem inter
 - Comandos (Ctrl+Shift+P): "DedSec: Analisar arquivo atual" e "DedSec: Analisar projeto inteiro".
 - Respeita o `.dedsec.toml` do projeto.
 
-Requisitos: Python 3.10+ e a pasta `backend/scanner` do projeto aberta no VS Code.
+## Instalação
+
+Baixe o `.vsix` em https://dedsec-beta.vercel.app e, no VS Code, abra a paleta
+de comandos (Ctrl+Shift+P) e escolha **Extensions: Install from VSIX...**.
+
+**Requisito:** Python 3.11 ou mais novo instalado e acessível no PATH.
+
+O scanner vem embutido na extensão, então ela funciona em qualquer projeto,
+não só no repositório do DedSec. Se o projeto aberto tiver o seu próprio
+`backend/scanner`, a extensão usa esse, para que quem desenvolve o DedSec
+teste as regras que está editando.
+
+## Como gerar o pacote
+
+```
+npm run package
+```
+
+O comando copia `backend/scanner` para dentro da extensão (`build.js`) e gera o
+`.vsix`. A cópia não é versionada: o código vive apenas em `backend/scanner`.
+Depois de gerar, atualize também `frontend/public/`, que é de onde o site serve
+o download.

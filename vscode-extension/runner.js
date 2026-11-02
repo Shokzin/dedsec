@@ -24,12 +24,24 @@ function hasScanner(dir) {
   return fs.existsSync(path.join(dir, "scanner", "cli.py"));
 }
 
+// A extensao traz uma copia do scanner (pasta "scanner" ao lado deste arquivo,
+// gerada por build.js). Sem ela, a extensao so funcionaria dentro do proprio
+// repositorio do DedSec, que e onde existe backend/scanner.
+const SCANNER_EMBUTIDO = __dirname;
+
 function detectScannerDir(workspaceRoot, configured) {
   if (configured) {
     const abs = path.isAbsolute(configured) ? configured : path.join(workspaceRoot, configured);
     return hasScanner(abs) ? abs : null;
   }
-  for (const dir of [path.join(workspaceRoot, "backend"), workspaceRoot]) {
+  // O scanner do projeto aberto vem primeiro: quem desenvolve o DedSec testa as
+  // regras que esta editando, nao as da versao empacotada.
+  const candidatos = [];
+  if (workspaceRoot) {
+    candidatos.push(path.join(workspaceRoot, "backend"), workspaceRoot);
+  }
+  candidatos.push(SCANNER_EMBUTIDO);
+  for (const dir of candidatos) {
     if (hasScanner(dir)) return dir;
   }
   return null;

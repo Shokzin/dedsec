@@ -441,6 +441,42 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── EXTENSAO DO EDITOR ── */}
+      <section id="editor" style={{ padding: '100px 5%', background: t.bg, borderTop: `1px solid ${t.borderLight}` }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div className="about-grid" style={{ display: 'flex', gap: 80, alignItems: 'flex-start' }}>
+            <div style={{ flex: '0 0 48%' }}>
+              <Reveal>
+                <p style={sectionLabel}>{tr('land.extKicker')}</p>
+                <div style={divider} />
+                <h2 style={{ ...sectionTitle, marginBottom: 24 }}>{tr('land.extTitle')}<br /><span style={{ fontWeight: 600 }}>{tr('land.extTitleBold')}</span></h2>
+                <p style={{ fontSize: 16, lineHeight: 1.8, color: t.textSecondary, marginBottom: 32 }}>{tr('land.extDesc')}</p>
+                <a
+                  href="/dedsec-0.2.0.vsix"
+                  download
+                  style={{ ...navCTAStyle, padding: '14px 28px', fontSize: 14, display: 'inline-block', textDecoration: 'none' }}
+                >
+                  {tr('land.extDownload')} ↓
+                </a>
+                <p style={{ fontSize: 13, color: t.textMuted, marginTop: 14 }}>{tr('land.extReq')}</p>
+              </Reveal>
+            </div>
+            <div style={{ flex: 1 }}>
+              <Reveal delay={150}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {[tr('land.extStep1'), tr('land.extStep2'), tr('land.extStep3')].map((passo, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                      <div style={{ flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: t.bgTertiary, color: t.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>{i + 1}</div>
+                      <p style={{ fontSize: 15, lineHeight: 1.7, color: t.textSecondary, paddingTop: 3 }}>{passo}</p>
+                    </div>
+                  ))}
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── STACK ── */}
       <section id="stack" style={{ padding: '100px 5%', background: t.bg }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>

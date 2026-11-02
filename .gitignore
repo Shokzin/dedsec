@@ -40,3 +40,6 @@ build/
 !frontend/.env.example
 *.pem
 *.key
+# copia gerada por vscode-extension/build.js (o original vive em backend/scanner)
+vscode-extension/scanner/
+vscode-extension/*.vsix

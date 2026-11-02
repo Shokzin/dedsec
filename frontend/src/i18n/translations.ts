@@ -348,6 +348,15 @@ const en = {
   'land.heroSubtitleFull': 'Submit any public GitHub repository URL. DedSec analyzes the codebase for security vulnerabilities and returns a detailed report with severity ratings, file locations, and remediation guidance.',
   'land.filesScanned': '{count} files scanned',
   'land.vulnsFound': '{count} vulnerabilities',
+  'land.extKicker': 'Editor',
+  'land.extTitle': 'Check as you',
+  'land.extTitleBold': 'write',
+  'land.extDesc': 'The DedSec extension underlines vulnerabilities in Visual Studio Code as you type, before the file is even saved. It carries the scanner inside it and runs entirely on your machine — no account, no network, nothing sent anywhere.',
+  'land.extDownload': 'Download the extension',
+  'land.extReq': 'Requires Python 3.11 or newer installed.',
+  'land.extStep1': 'Download the .vsix file',
+  'land.extStep2': 'In VS Code, open the command palette and choose "Extensions: Install from VSIX…"',
+  'land.extStep3': 'Pick the downloaded file and reload the editor',
 } as const
 
 export type TranslationKey = keyof typeof en
@@ -690,6 +699,15 @@ const pt: Dict = {
   'land.heroSubtitleFull': 'Envie a URL de qualquer repositório público do GitHub. O DedSec analisa o código em busca de vulnerabilidades e devolve um relatório detalhado com grau de severidade, localização no arquivo e orientação de correção.',
   'land.filesScanned': '{count} arquivos analisados',
   'land.vulnsFound': '{count} vulnerabilidades',
+  'land.extKicker': 'Editor',
+  'land.extTitle': 'Analise enquanto',
+  'land.extTitleBold': 'escreve',
+  'land.extDesc': 'A extensão do DedSec sublinha as vulnerabilidades dentro do Visual Studio Code enquanto você digita, antes mesmo de salvar o arquivo. Ela já vem com o scanner embutido e roda inteira na sua máquina: sem conta, sem rede, sem enviar nada para lugar nenhum.',
+  'land.extDownload': 'Baixar a extensão',
+  'land.extReq': 'Requer Python 3.11 ou mais recente instalado.',
+  'land.extStep1': 'Baixe o arquivo .vsix',
+  'land.extStep2': 'No VS Code, abra a paleta de comandos e escolha "Extensions: Install from VSIX…"',
+  'land.extStep3': 'Selecione o arquivo baixado e recarregue o editor',
 }
 
 const es: Dict = {
@@ -1028,6 +1046,15 @@ const es: Dict = {
   'land.heroSubtitleFull': 'Envíe la URL de cualquier repositorio público de GitHub. DedSec analiza el código en busca de vulnerabilidades y devuelve un informe detallado con grado de severidad, ubicación en el archivo y orientación de corrección.',
   'land.filesScanned': '{count} archivos analizados',
   'land.vulnsFound': '{count} vulnerabilidades',
+  'land.extKicker': 'Editor',
+  'land.extTitle': 'Analiza mientras',
+  'land.extTitleBold': 'escribes',
+  'land.extDesc': 'La extensión de DedSec subraya las vulnerabilidades dentro de Visual Studio Code mientras escribes, incluso antes de guardar el archivo. Lleva el escáner incorporado y funciona por completo en tu máquina: sin cuenta, sin red, sin enviar nada a ninguna parte.',
+  'land.extDownload': 'Descargar la extensión',
+  'land.extReq': 'Requiere Python 3.11 o más reciente instalado.',
+  'land.extStep1': 'Descarga el archivo .vsix',
+  'land.extStep2': 'En VS Code, abre la paleta de comandos y elige "Extensions: Install from VSIX…"',
+  'land.extStep3': 'Selecciona el archivo descargado y recarga el editor',
 }
 
 const ru: Dict = {
@@ -1366,6 +1393,15 @@ const ru: Dict = {
   'land.heroSubtitleFull': 'Укажите ссылку на любой публичный репозиторий GitHub. DedSec проверит код на уязвимости и вернёт подробный отчёт с оценкой серьёзности, расположением в файле и рекомендациями по исправлению.',
   'land.filesScanned': 'Проверено файлов: {count}',
   'land.vulnsFound': 'Уязвимостей: {count}',
+  'land.extKicker': 'Редактор',
+  'land.extTitle': 'Проверяйте,',
+  'land.extTitleBold': 'пока пишете',
+  'land.extDesc': 'Расширение DedSec подчёркивает уязвимости прямо в Visual Studio Code, пока вы печатаете, ещё до сохранения файла. Сканер встроен внутрь, всё работает на вашей машине: без учётной записи, без сети, ничего никуда не отправляется.',
+  'land.extDownload': 'Скачать расширение',
+  'land.extReq': 'Требуется установленный Python 3.11 или новее.',
+  'land.extStep1': 'Скачайте файл .vsix',
+  'land.extStep2': 'В VS Code откройте палитру команд и выберите «Extensions: Install from VSIX…»',
+  'land.extStep3': 'Выберите скачанный файл и перезагрузите редактор',
 }
 
 const it: Dict = {
@@ -1679,6 +1715,15 @@ const it: Dict = {
   'land.heroSubtitleFull': 'Inserisci l\'URL di un repository GitHub pubblico. DedSec analizza il codice alla ricerca di vulnerabilità e restituisce un report dettagliato con livello di gravità, posizione nei file e indicazioni per la correzione.',
   'land.filesScanned': '{count} file analizzati',
   'land.vulnsFound': '{count} vulnerabilità',
+  'land.extKicker': 'Editor',
+  'land.extTitle': 'Analizza mentre',
+  'land.extTitleBold': 'scrivi',
+  'land.extDesc': 'L\'estensione di DedSec sottolinea le vulnerabilità dentro Visual Studio Code mentre scrivi, ancora prima di salvare il file. Porta lo scanner al suo interno e funziona interamente sulla tua macchina: senza account, senza rete, senza inviare nulla da nessuna parte.',
+  'land.extDownload': 'Scarica l\'estensione',
+  'land.extReq': 'Richiede Python 3.11 o più recente installato.',
+  'land.extStep1': 'Scarica il file .vsix',
+  'land.extStep2': 'In VS Code, apri la tavolozza dei comandi e scegli "Extensions: Install from VSIX…"',
+  'land.extStep3': 'Seleziona il file scaricato e ricarica l\'editor',
 }
 
 const fr: Dict = {
@@ -1992,6 +2037,15 @@ const fr: Dict = {
   'land.heroSubtitleFull': 'Indiquez l\'URL d\'un dépôt GitHub public. DedSec analyse le code à la recherche de vulnérabilités et renvoie un rapport détaillé avec le niveau de gravité, l\'emplacement dans les fichiers et des conseils de correction.',
   'land.filesScanned': '{count} fichiers analysés',
   'land.vulnsFound': '{count} vulnérabilités',
+  'land.extKicker': 'Éditeur',
+  'land.extTitle': 'Analysez pendant',
+  'land.extTitleBold': 'que vous écrivez',
+  'land.extDesc': 'L\'extension DedSec souligne les vulnérabilités dans Visual Studio Code pendant que vous tapez, avant même d\'enregistrer le fichier. Elle embarque le scanner et fonctionne entièrement sur votre machine : sans compte, sans réseau, sans rien envoyer nulle part.',
+  'land.extDownload': 'Télécharger l\'extension',
+  'land.extReq': 'Nécessite Python 3.11 ou plus récent installé.',
+  'land.extStep1': 'Téléchargez le fichier .vsix',
+  'land.extStep2': 'Dans VS Code, ouvrez la palette de commandes et choisissez « Extensions: Install from VSIX… »',
+  'land.extStep3': 'Sélectionnez le fichier téléchargé et rechargez l\'éditeur',
 }
 
 export const translations: Record<Lang, Dict> = { pt, en, es, ru, it, fr }
