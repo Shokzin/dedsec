@@ -451,20 +451,31 @@ export default function LandingPage() {
                 <div style={divider} />
                 <h2 style={{ ...sectionTitle, marginBottom: 24 }}>{tr('land.extTitle')}<br /><span style={{ fontWeight: 600 }}>{tr('land.extTitleBold')}</span></h2>
                 <p style={{ fontSize: 16, lineHeight: 1.8, color: t.textSecondary, marginBottom: 32 }}>{tr('land.extDesc')}</p>
-                <a
-                  href="/dedsec-0.2.0.vsix"
-                  download
-                  style={{ ...navCTAStyle, padding: '14px 28px', fontSize: 14, display: 'inline-block', textDecoration: 'none' }}
-                >
-                  {tr('land.extDownload')} ↓
-                </a>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                  <a
+                    href="https://marketplace.visualstudio.com/items?itemName=DedSec.dedsec"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ ...navCTAStyle, padding: '14px 28px', fontSize: 14, display: 'inline-block', textDecoration: 'none' }}
+                  >
+                    {tr('land.extMarketplace')} →
+                  </a>
+                  {/* o .vsix continua disponivel para quem nao usa o Marketplace */}
+                  <a
+                    href="/dedsec-0.2.0.vsix"
+                    download
+                    style={{ fontSize: 14, color: t.textSecondary, textDecoration: 'underline', textUnderlineOffset: 4 }}
+                  >
+                    {tr('land.extOrVsix')}
+                  </a>
+                </div>
                 <p style={{ fontSize: 13, color: t.textMuted, marginTop: 14 }}>{tr('land.extReq')}</p>
               </Reveal>
             </div>
             <div style={{ flex: 1 }}>
               <Reveal delay={150}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  {[tr('land.extStep1'), tr('land.extStep2'), tr('land.extStep3')].map((passo, i) => (
+                  {[tr('land.extStepA'), tr('land.extStepB'), tr('land.extStepC')].map((passo, i) => (
                     <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                       <div style={{ flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: t.bgTertiary, color: t.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>{i + 1}</div>
                       <p style={{ fontSize: 15, lineHeight: 1.7, color: t.textSecondary, paddingTop: 3 }}>{passo}</p>

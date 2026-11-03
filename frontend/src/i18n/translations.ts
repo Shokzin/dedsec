@@ -357,6 +357,11 @@ const en = {
   'land.extStep1': 'Download the .vsix file',
   'land.extStep2': 'In VS Code, open the command palette and choose "Extensions: Install from VSIX…"',
   'land.extStep3': 'Pick the downloaded file and reload the editor',
+  'land.extMarketplace': 'Install from the Marketplace',
+  'land.extOrVsix': 'or download the .vsix file',
+  'land.extStepA': 'Open Visual Studio Code and press Ctrl+Shift+X',
+  'land.extStepB': 'Search for DedSec',
+  'land.extStepC': 'Click Install. That is all — the scanner comes inside it.',
 } as const
 
 export type TranslationKey = keyof typeof en
@@ -708,6 +713,11 @@ const pt: Dict = {
   'land.extStep1': 'Baixe o arquivo .vsix',
   'land.extStep2': 'No VS Code, abra a paleta de comandos e escolha "Extensions: Install from VSIX…"',
   'land.extStep3': 'Selecione o arquivo baixado e recarregue o editor',
+  'land.extMarketplace': 'Instalar pelo Marketplace',
+  'land.extOrVsix': 'ou baixar o arquivo .vsix',
+  'land.extStepA': 'Abra o Visual Studio Code e pressione Ctrl+Shift+X',
+  'land.extStepB': 'Procure por DedSec',
+  'land.extStepC': 'Clique em Instalar. É só isso: o scanner vem junto.',
 }
 
 const es: Dict = {
@@ -1055,6 +1065,11 @@ const es: Dict = {
   'land.extStep1': 'Descarga el archivo .vsix',
   'land.extStep2': 'En VS Code, abre la paleta de comandos y elige "Extensions: Install from VSIX…"',
   'land.extStep3': 'Selecciona el archivo descargado y recarga el editor',
+  'land.extMarketplace': 'Instalar desde el Marketplace',
+  'land.extOrVsix': 'o descargar el archivo .vsix',
+  'land.extStepA': 'Abre Visual Studio Code y pulsa Ctrl+Shift+X',
+  'land.extStepB': 'Busca DedSec',
+  'land.extStepC': 'Haz clic en Instalar. Eso es todo: el escáner viene incluido.',
 }
 
 const ru: Dict = {
@@ -1402,6 +1417,11 @@ const ru: Dict = {
   'land.extStep1': 'Скачайте файл .vsix',
   'land.extStep2': 'В VS Code откройте палитру команд и выберите «Extensions: Install from VSIX…»',
   'land.extStep3': 'Выберите скачанный файл и перезагрузите редактор',
+  'land.extMarketplace': 'Установить из Marketplace',
+  'land.extOrVsix': 'или скачать файл .vsix',
+  'land.extStepA': 'Откройте Visual Studio Code и нажмите Ctrl+Shift+X',
+  'land.extStepB': 'Найдите DedSec',
+  'land.extStepC': 'Нажмите «Установить». Это всё — сканер уже внутри.',
 }
 
 const it: Dict = {
@@ -1724,6 +1744,11 @@ const it: Dict = {
   'land.extStep1': 'Scarica il file .vsix',
   'land.extStep2': 'In VS Code, apri la tavolozza dei comandi e scegli "Extensions: Install from VSIX…"',
   'land.extStep3': 'Seleziona il file scaricato e ricarica l\'editor',
+  'land.extMarketplace': 'Installa dal Marketplace',
+  'land.extOrVsix': 'o scarica il file .vsix',
+  'land.extStepA': 'Apri Visual Studio Code e premi Ctrl+Shift+X',
+  'land.extStepB': 'Cerca DedSec',
+  'land.extStepC': 'Clicca su Installa. È tutto: lo scanner è incluso.',
 }
 
 const fr: Dict = {
@@ -2046,6 +2071,11 @@ const fr: Dict = {
   'land.extStep1': 'Téléchargez le fichier .vsix',
   'land.extStep2': 'Dans VS Code, ouvrez la palette de commandes et choisissez « Extensions: Install from VSIX… »',
   'land.extStep3': 'Sélectionnez le fichier téléchargé et rechargez l\'éditeur',
+  'land.extMarketplace': 'Installer depuis le Marketplace',
+  'land.extOrVsix': 'ou télécharger le fichier .vsix',
+  'land.extStepA': 'Ouvrez Visual Studio Code et appuyez sur Ctrl+Shift+X',
+  'land.extStepB': 'Recherchez DedSec',
+  'land.extStepC': 'Cliquez sur Installer. C\'est tout : le scanner est inclus.',
 }
 
 export const translations: Record<Lang, Dict> = { pt, en, es, ru, it, fr }

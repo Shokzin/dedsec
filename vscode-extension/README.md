@@ -11,8 +11,14 @@ antes de qualquer commit. Usa o scanner local do DedSec (Regex + AST), sem inter
 
 ## Instalação
 
-Baixe o `.vsix` em https://dedsec-beta.vercel.app e, no VS Code, abra a paleta
-de comandos (Ctrl+Shift+P) e escolha **Extensions: Install from VSIX...**.
+No VS Code, abra o painel de extensões (Ctrl+Shift+X), procure por **DedSec**
+e clique em Instalar. Pela paleta de comandos, `ext install DedSec.dedsec`.
+
+Página no Marketplace:
+https://marketplace.visualstudio.com/items?itemName=DedSec.dedsec
+
+Também é possível baixar o `.vsix` em https://dedsec-beta.vercel.app e usar
+**Extensions: Install from VSIX...**.
 
 **Requisito:** Python 3.11 ou mais novo instalado e acessível no PATH.
 
