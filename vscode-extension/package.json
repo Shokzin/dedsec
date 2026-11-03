@@ -3,7 +3,7 @@
   "displayName": "DedSec",
   "description": "Mostra vulnerabilidades de seguranca direto no editor, antes do commit. Traz o scanner embutido; precisa apenas de Python 3.11+ instalado.",
   "version": "0.2.0",
-  "publisher": "dedsec",
+  "publisher": "DedSec",
   "license": "MIT",
   "engines": {
     "vscode": "^1.80.0"
