@@ -14,30 +14,21 @@ antes de qualquer commit. Usa o scanner local do DedSec (Regex + AST), sem inter
 No VS Code, abra o painel de extensões (Ctrl+Shift+X), procure por **DedSec**
 e clique em Instalar. Pela paleta de comandos, `ext install DedSec.dedsec`.
 
-Página no Marketplace:
-https://marketplace.visualstudio.com/items?itemName=DedSec.dedsec
-
-Também é possível baixar o `.vsix` em https://dedsec-beta.vercel.app e usar
+Também é possível baixar o `.vsix` em https://dedsec-security.vercel.app e usar
 **Extensions: Install from VSIX...**.
 
 **Requisito:** Python 3.11 ou mais novo instalado e acessível no PATH.
 
-O scanner vem embutido na extensão e funciona em qualquer projeto, sem
-internet. A extensão nunca executa código do projeto aberto: usa sempre o
-scanner embutido e chama o Python pelo caminho absoluto.
+## Privacidade e segurança
 
-As configurações `dedsec.pythonPath` e `dedsec.scannerDir` só valem nas
-configurações de usuário; o `.vscode/settings.json` de um projeto não as altera.
-Para testar regras em desenvolvimento, aponte `dedsec.scannerDir` para a pasta
-`backend` do seu clone do DedSec.
+Tudo roda na sua máquina: o código nunca é enviado para lugar nenhum.
 
-## Como gerar o pacote
+A extensão nunca executa código do projeto aberto: usa sempre o scanner
+embutido e chama o Python pelo caminho absoluto. A configuração
+`dedsec.pythonPath` só vale nas configurações de usuário; o
+`.vscode/settings.json` de um projeto não a altera.
 
-```
-npm run package
-```
+## Licença
 
-O comando copia `backend/scanner` para dentro da extensão (`build.js`) e gera o
-`.vsix`. A cópia não é versionada: o código vive apenas em `backend/scanner`.
-Depois de gerar, atualize também `frontend/public/`, que é de onde o site serve
-o download.
+Uso gratuito. Copiar, modificar ou redistribuir a extensão ou o seu código não
+é permitido. Veja o arquivo LICENSE.

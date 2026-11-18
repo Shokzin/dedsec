@@ -13,7 +13,7 @@ You can expect an acknowledgement within a few days. Once the issue is fixed, yo
 In scope:
 
 - the API and the background worker (`backend/`)
-- the web interface (`frontend/`) and the live instance at https://dedsec-beta.vercel.app
+- the web interface (`frontend/`) and the live instance at https://dedsec-security.vercel.app
 - the VS Code extension (`vscode-extension/`) and the pre-commit hook
 - the database policies in `docs/`
 

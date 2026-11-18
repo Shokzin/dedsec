@@ -1,7 +1,7 @@
 # Blueprint da hospedagem do backend.
 #
 # Descreve a API e o Redis. O frontend nao entra aqui: e um conjunto de
-# arquivos estaticos, publicado na Vercel (ver docs/deploy.md).
+# arquivos estaticos, publicado na Vercel.
 #
 # As variaveis marcadas com "sync: false" nao ficam neste arquivo porque sao
 # segredos; elas sao preenchidas uma unica vez no painel, no primeiro deploy.

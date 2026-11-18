@@ -6,14 +6,14 @@
   <img src="https://img.shields.io/badge/react-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/supabase-postgres-3ECF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/visual-studio-marketplace/v/DedSec.dedsec?style=flat-square&label=VS%20Code&logo=visualstudiocode&logoColor=white" alt="VS Code Marketplace" />
-  <img src="https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square" alt="MIT license" />
+  <img src="https://img.shields.io/badge/license-all%20rights%20reserved-lightgrey?style=flat-square" alt="All rights reserved" />
 </p>
 
 **Security vulnerabilities flagged while you type, and blocked before they are committed — not discovered after they are public.**
 
 DedSec is a static analysis tool that runs the same detection engine in three places: inside **VS Code** as you write, in a **Git pre-commit hook** that refuses vulnerable commits, and on a **web platform** that scans any public GitHub repository and produces a scored report.
 
-- **Web platform:** https://dedsec-beta.vercel.app
+- **Web platform:** https://dedsec-security.vercel.app
 - **VS Code extension:** [DedSec on the Marketplace](https://marketplace.visualstudio.com/items?itemName=DedSec.dedsec) — or search for **DedSec** in the Extensions panel
 
 ---
@@ -31,22 +31,21 @@ flowchart LR
     subgraph local["On your machine — no network, no account"]
         E["VS Code extension<br/>underlines the line as you type"]
         H["Pre-commit hook<br/>blocks the commit"]
-        C["CLI<br/>scans files or folders"]
     end
     subgraph web["Web platform"]
         W["React app"] --> A["FastAPI"] --> Q["Redis queue"] --> K["Celery worker<br/>clones the repository"]
         K --> DB[("Supabase<br/>PostgreSQL + RLS")]
     end
-    E & H & C & K --> S["Shared scanner engine<br/>lexical + structural analysis"]
+    E & H & K --> S["Shared scanner engine<br/>lexical + structural analysis"]
 ```
 
 One engine, one set of rules: the editor, the hook and the website always agree on what is a vulnerability.
 
-The engine (`backend/scanner`) uses **only the Python standard library**. That is what lets it run inside the extension and the hook without installing anything, and fast enough to keep up with typing: about **0.9 ms per file** in the editor and **~420 files per second** on a full project.
+The engine uses only the Python standard library. That is what lets it run inside the extension without installing anything, and fast enough to keep up with typing: about **0.9 ms per file** in the editor and **~420 files per second** on a full project.
 
 ## What it detects
 
-**Lexical layer** — 31 regular-expression rules covering 16 CWEs, applied to 18 file types (`.py .js .ts .jsx .tsx .php .rb .java .go .html .htm .env .cfg .conf .ini .yaml .yml .json`).
+**Lexical layer** — 31 rules covering 16 CWEs, applied to 18 file types (`.py .js .ts .jsx .tsx .php .rb .java .go .html .htm .env .cfg .conf .ini .yaml .yml .json`).
 
 | OWASP Top 10 (2021) | Examples | CWE |
 |---|---|---|
@@ -60,7 +59,9 @@ The engine (`backend/scanner`) uses **only the Python standard library**. That i
 
 The structural layer is what tells `eval("1 + 1")` (harmless constant) apart from `eval(user_input)`.
 
-## Getting started
+## How to use
+
+There are two ways to use DedSec: the VS Code extension and the web platform.
 
 ### VS Code extension
 
@@ -74,51 +75,18 @@ The structural layer is what tells `eval("1 + 1")` (harmless constant) apart fro
 | `DedSec: Analisar projeto inteiro` | Scans the whole workspace |
 | `dedsec.runOn` | `type` (default) or `save` |
 | `dedsec.pythonPath` | Python interpreter to use (user settings only) |
-| `dedsec.scannerDir` | Use a different copy of the scanner, for rule development (user settings only) |
 
-### Pre-commit hook and CLI
-
-The scanner has no dependencies, so cloning this repository is all the installation it needs.
-
-```bash
-git clone https://github.com/Shokzin/dedsec.git ~/dedsec
-
-# inside the project you want to protect
-cd ~/my-project
-PYTHONPATH=~/dedsec/backend python -m scanner install-hook
-```
-
-On Windows (PowerShell):
-
-```powershell
-$env:PYTHONPATH = "C:\path\to\dedsec\backend"
-python -m scanner install-hook
-```
-
-From then on, every `git commit` — from the terminal or from the VS Code Source Control panel — scans **the staged version** of the files, which is exactly what is about to be committed. If something at or above the configured severity is found, the commit is not created. To bypass it once, on purpose: `git commit --no-verify`. To remove it: `python -m scanner uninstall-hook`.
-
-The CLI can also be used on its own:
-
-```bash
-python -m scanner scan .                     # a folder
-python -m scanner scan app.py --json         # machine-readable output
-python -m scanner scan --staged              # what the hook runs
-python -m scanner scan --fail-on critical .  # only fail on critical findings
-```
-
-Exit codes: `0` nothing at or above the threshold, `1` findings at or above the threshold, `2` usage error.
+Everything runs on your machine: your code is never sent anywhere.
 
 ### Web platform
 
-Sign in at **https://dedsec-beta.vercel.app** (email and password, or Google), paste the URL of a public GitHub repository and follow the scan in real time. The report shows the score, totals by severity and every finding with its snippet and fix. It can be exported to PDF, and two scans of the same repository can be compared to see what was fixed, what is new and what remains.
+Sign in at **https://dedsec-security.vercel.app** (email and password, or Google), paste the URL of a public GitHub repository and follow the scan in real time. The report shows the score, totals by severity and every finding with its snippet and fix. It can be exported to PDF, and two scans of the same repository can be compared to see what was fixed, what is new and what remains.
 
 The interface is available in Portuguese, English, Spanish, Russian, Italian and French.
 
 > The API runs on a free hosting plan that sleeps when idle, so the first request after a while can take up to a minute.
 
-## Configuration
-
-### Ignoring a finding
+## Ignoring a finding
 
 Add a comment on the line, or on the line right above it:
 
@@ -128,15 +96,11 @@ digest = hashlib.md5(data).hexdigest()  # dedsec: ignore
 digest = hashlib.md5(data).hexdigest()
 ```
 
-Without a list, every finding on that line is ignored; with `[CWE-…]` (or the finding type), only that one. The VS Code quick fix (`Ctrl+.`) inserts the comment for you. Because suppressions live in the code, they go through code review like everything else.
+Without a list, every finding on that line is ignored; with `[CWE-…]` (or the finding type), only that one. The extension's quick fix (`Ctrl+.`) inserts the comment for you. Because suppressions live in the code, they go through code review like everything else.
 
-### `.dedsec.toml`
-
-Optional, at the root of the project:
+To ignore folders, files or whole rules across a project, add a `.dedsec.toml` at its root:
 
 ```toml
-fail_on = "high"            # low | medium | high | critical | none
-
 ignore_paths = [
   "tests/",                 # folders end with "/"
   "*.min.js",               # files accept wildcards
@@ -159,47 +123,9 @@ Reports on the web platform include a score from 0 to 100. It starts at 100 and 
 | Database and auth | Supabase — PostgreSQL with row-level security, Supabase Auth (JWT) |
 | Web interface | React 19, TypeScript, Vite, Tailwind CSS, TanStack Query, jsPDF |
 | Editor | VS Code extension (JavaScript) with the scanner bundled |
-| Hosting | Render (API + worker + Redis), Vercel (interface) |
+| Hosting | Render (API, worker and Redis), Vercel (interface) |
 
-```
-backend/
-  app/           FastAPI: routes, auth, rate limiting, settings
-  scanner/       detection engine and CLI (standard library only)
-  worker/        Celery task that runs a scan
-frontend/        React application
-vscode-extension/
-docs/            database migrations and deployment guide
-testes/          automated tests
-```
-
-## Running it yourself
-
-Requirements: Docker, and a free [Supabase](https://supabase.com) project.
-
-1. In the Supabase SQL Editor, run [`docs/migration.sql`](docs/migration.sql). It creates the tables, the row-level security policies and the avatar bucket.
-2. Copy `.env.example` to `.env` and `frontend/.env.example` to `frontend/.env`, then fill in the Supabase URL and keys (*Project Settings → API*).
-3. Start everything:
-
-   ```bash
-   docker compose up --build
-   ```
-
-   The interface is at http://localhost:5173 and the API at http://localhost:8000 (interactive docs at `/docs` in development).
-
-The `service_role` key goes **only** in the root `.env`. It bypasses row-level security and must never reach the browser, so it never goes into `frontend/.env` or any `VITE_` variable.
-
-To publish your own instance, follow [`docs/deploy.md`](docs/deploy.md).
-
-## Tests
-
-```bash
-pip install -r backend/requirements.txt pytest
-pytest testes/unitarios
-```
-
-The unit tests replace Supabase, Redis and Celery with in-memory doubles, so they run anywhere, with no credentials. They cover authorization between users, rate limiting, repository URL validation, symbolic-link handling, the repository size limit and the input validation of scan identifiers.
-
-The tests directly under `testes/` are integration tests: they need a running API and two test accounts configured in `testes/.env` (`DEDSEC_API_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `TEST_EMAIL`, `TEST_PASSWORD`, `TEST_EMAIL_B`, `TEST_PASSWORD_B`).
+The project is covered by 31 automated unit tests, including authorization between users, rate limiting, input validation and the protections described below.
 
 ## Security
 
@@ -211,7 +137,7 @@ DedSec handles code written by strangers, so the platform itself is built defens
 - **Users only see their own data.** The API filters every query by the authenticated user, and the database enforces the same rule with row-level security; the browser has read-only access.
 - **Tokens are verified by Supabase**, never decoded and trusted locally; a successful check is cached for at most 30 seconds.
 - **Rate limiting** per user, backed by Redis.
-- **The VS Code extension never runs code from the opened project:** it uses only its bundled scanner, calls Python by absolute path, and its interpreter settings cannot be changed by a project's `.vscode/settings.json`.
+- **The VS Code extension never runs code from the opened project:** it uses only its bundled scanner, calls Python by absolute path, and its interpreter setting cannot be changed by a project's `.vscode/settings.json`.
 
 Found a vulnerability in DedSec itself? Please report it privately — see [SECURITY.md](SECURITY.md).
 
@@ -223,10 +149,12 @@ Found a vulnerability in DedSec itself? Please report it privately — see [SECU
 
 ## About
 
-DedSec was developed as the final project (Trabalho de Graduação) of the Systems Analysis and Development program at **FATEC Cruzeiro – Prof. Waldomiro May**, Brazil, by Álefe Alexandre de Toledo, André Ribeiro Rodrigues Batista and Carlos Alberto de Oliveira e Silva, advised by Prof. Me. Eduardo Compasso Arbex.
+DedSec was designed and built by **Álefe Alexandre de Toledo** as his final project (Trabalho de Graduação) for the Systems Analysis and Development program at **FATEC Cruzeiro – Prof. Waldomiro May**, Brazil, under the supervision of Prof. Me. Eduardo Compasso Arbex.
 
 The name is a nod to the hacker collective of the game *Watch Dogs*.
 
 ## License
 
-[MIT](LICENSE)
+© 2026 Álefe Alexandre de Toledo. All rights reserved.
+
+The source code is public for portfolio and academic evaluation only. Using, copying, modifying or redistributing it is not permitted. To use DedSec, install the extension or use the web platform. See [LICENSE](LICENSE).
