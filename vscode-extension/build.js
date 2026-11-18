@@ -17,6 +17,7 @@ const ARQUIVOS = [
   "engine/local_scanner.py",
   "engine/pattern_scanner.py",
   "engine/ast_analyzer.py",
+  "engine/safe_files.py",
 ];
 
 const origem = path.join(__dirname, "..", "backend", "scanner");

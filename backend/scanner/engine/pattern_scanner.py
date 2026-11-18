@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from scanner.engine.finding import Finding
+from scanner.engine.safe_files import is_regular_file_inside as _is_regular_file_inside
 
 SCANNABLE_EXTENSIONS = {
     ".py", ".js", ".ts", ".jsx", ".tsx",
@@ -525,21 +526,24 @@ class PatternScanner:
             file_list: If provided, only scan these files.
                        If None, scan all files under repo_path.
         """
+        root = Path(repo_path)
         if file_list is not None:
             files_to_scan = []
             seen_paths = set()
             for f in file_list:
                 p = Path(f)
                 if not p.is_absolute():
-                    p = Path(repo_path) / p
+                    p = root / p
+                if not _is_regular_file_inside(p, root):
+                    continue
                 resolved = str(p.resolve())
-                if p.is_file() and resolved not in seen_paths:
+                if resolved not in seen_paths:
                     seen_paths.add(resolved)
                     files_to_scan.append(p)
         else:
             files_to_scan = [
-                f for f in Path(repo_path).rglob("*")
-                if f.is_file()
+                f for f in root.rglob("*")
+                if _is_regular_file_inside(f, root)
                 and not any(part in SKIP_DIRS for part in f.parts)
             ]
 

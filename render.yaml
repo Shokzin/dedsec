@@ -41,8 +41,6 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: SECRET_KEY
-        generateValue: true
 
   - type: keyvalue
     name: dedsec-redis

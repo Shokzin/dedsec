@@ -59,8 +59,16 @@ export default function ProfilePage() {
     if (!file || !user) return
     if (file.size > 2 * 1024 * 1024) { alert(tr('profile.imageTooBig')); return }
 
+    // A extensão vem do tipo do arquivo, e não do nome, que o usuário controla:
+    // "foto.html" viraria um arquivo HTML servido pelo bucket público.
+    // O bucket também restringe os tipos aceitos (docs/migration.sql).
+    const extPorTipo: Record<string, string> = {
+      'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
+    }
+    const ext = extPorTipo[file.type]
+    if (!ext) { alert(tr('profile.imageType')); return }
+
     setAvatarUploading(true)
-    const ext = file.name.split('.').pop()
     const path = `${user.id}.${ext}`
 
     const { error: uploadError } = await supabase.storage

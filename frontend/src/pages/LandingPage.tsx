@@ -462,7 +462,7 @@ export default function LandingPage() {
                   </a>
                   {/* o .vsix continua disponivel para quem nao usa o Marketplace */}
                   <a
-                    href="/dedsec-0.2.0.vsix"
+                    href="/dedsec-0.2.1.vsix"
                     download
                     style={{ fontSize: 14, color: t.textSecondary, textDecoration: 'underline', textUnderlineOffset: 4 }}
                   >

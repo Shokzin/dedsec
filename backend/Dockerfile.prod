@@ -6,7 +6,7 @@
 FROM python:3.11-slim
 
 # git e indispensavel em tempo de execucao: o scanner clona os repositorios
-# analisados. As demais bibliotecas do sistema sao exigidas pelo gitpython.
+# analisados chamando o proprio git.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         ca-certificates \

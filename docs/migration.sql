@@ -49,15 +49,43 @@ create table scan_progress (
 );
 
 -- Row Level Security
+-- O site so le, e so as proprias analises. Toda escrita passa pela API, que usa
+-- a chave service_role (ignora estas politicas e nao e afetada pelos revokes).
 alter table scans enable row level security;
 alter table vulnerabilities enable row level security;
+alter table scan_progress enable row level security;
 
-create policy "Users see own scans"
-  on scans for all using (auth.uid() = user_id);
+create policy "Usuario le as proprias analises"
+  on scans for select to authenticated
+  using ((select auth.uid()) = user_id);
 
-create policy "Users see own vulnerabilities"
-  on vulnerabilities for all
-  using (scan_id in (select id from scans where user_id = auth.uid()));
+create policy "Usuario le as proprias vulnerabilidades"
+  on vulnerabilities for select to authenticated
+  using (scan_id in (select id from scans where user_id = (select auth.uid())));
 
--- Enable Realtime
+create policy "Usuario acompanha as proprias analises"
+  on scan_progress for select to authenticated
+  using (scan_id in (select id from scans where user_id = (select auth.uid())));
+
+revoke all on table scans, vulnerabilities, scan_progress from anon;
+revoke insert, update, delete, truncate, references, trigger
+  on table scans, vulnerabilities, scan_progress from authenticated;
+
+-- Enable Realtime (o progresso chega ao navegador; o RLS acima filtra por dono)
 alter publication supabase_realtime add table scan_progress;
+
+-- Avatares: bucket publico para leitura, so imagens de ate 2 MB.
+-- O arquivo de cada usuario se chama "<id do usuario>.<extensao>".
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 2097152,
+        array['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
+on conflict (id) do nothing;
+
+create policy "Avatar: dono le" on storage.objects for select to authenticated
+  using (bucket_id = 'avatars' and split_part(name, '.', 1) = (select auth.uid())::text);
+create policy "Avatar: dono envia" on storage.objects for insert to authenticated
+  with check (bucket_id = 'avatars' and split_part(name, '.', 1) = (select auth.uid())::text);
+create policy "Avatar: dono atualiza" on storage.objects for update to authenticated
+  using (bucket_id = 'avatars' and split_part(name, '.', 1) = (select auth.uid())::text);
+create policy "Avatar: dono remove" on storage.objects for delete to authenticated
+  using (bucket_id = 'avatars' and split_part(name, '.', 1) = (select auth.uid())::text);

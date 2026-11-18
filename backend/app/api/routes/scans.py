@@ -10,8 +10,9 @@ from app.core.security import get_current_user_id
 from app.core.config import get_settings
 from app.core.rate_limit import limitar
 
-_lim = get_settings()
 from supabase import Client
+
+_lim = get_settings()
 
 router = APIRouter(prefix="/scans", tags=["scans"])
 
@@ -122,19 +123,19 @@ async def scan_stats(
 @router.get("/{scan_id}", response_model=ScanReport,
             dependencies=[Depends(limitar(_lim.rate_limit_leitura_min, 60, "leitura"))])
 async def get_scan(
-    scan_id: str,
+    scan_id: uuid.UUID,
     db: Client = Depends(get_supabase),
     user_id: str = Depends(get_current_user_id),
 ) -> ScanReport:
     response = (
         db.table("scans")
         .select("*, vulnerabilities(*)")
-        .eq("id", scan_id)
+        .eq("id", str(scan_id))
         .eq("user_id", user_id)      # ← can't access other users' scans
         .maybe_single()
         .execute()
     )
-    if not response.data:
+    if not response or not response.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scan not found")
 
     row = response.data

@@ -1,12 +1,15 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 from functools import lru_cache
 import json
 
 
 class Settings(BaseSettings):
+    # "extra=ignore": um .env antigo com variaveis que nao existem mais (como
+    # SECRET_KEY, removida por nunca ter sido usada) nao impede a aplicacao de subir.
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
+
     environment: str = "development"
-    secret_key: str = "change-me"
     # Guardado como texto de proposito: o pydantic-settings tenta interpretar
     # como JSON todo campo de tipo composto lido do ambiente, e falha na
     # partida se o valor nao for JSON. A conversao fica na propriedade abaixo.
@@ -49,10 +52,6 @@ class Settings(BaseSettings):
             except json.JSONDecodeError:
                 return []
         return [parte.strip() for parte in texto.split(",") if parte.strip()]
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
 
 
 @lru_cache

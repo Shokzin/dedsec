@@ -25,8 +25,10 @@ class PipelineResult:
 
 
 class ScanPipeline:
-    def __init__(self, scan_id: str, repo_url: str, progress_callback: Callable | None = None):
+    def __init__(self, scan_id: str, repo_url: str, progress_callback: Callable | None = None,
+                 max_repo_size_mb: int | None = None):
         self.scan_id = scan_id
+        self.max_repo_size_mb = max_repo_size_mb
         self.repo_url = repo_url
         self.progress = progress_callback or (lambda msg, pct, partial=0: None)
 
@@ -41,7 +43,7 @@ class ScanPipeline:
         all_vulns = []
 
         self.progress("Cloning repository...", 10)
-        fetcher = GitFetcher(tmp_dir)
+        fetcher = GitFetcher(tmp_dir, self.max_repo_size_mb)
         repo_path, file_list = fetcher.clone(self.repo_url)
         self.progress(f"Cloned {len(file_list)} files", 20)
 

@@ -34,6 +34,7 @@ import argparse
 import fnmatch
 import json
 import os
+import stat
 import subprocess
 import sys
 from dataclasses import asdict
@@ -93,7 +94,17 @@ def _collect_from_disk(paths: list[str], warnings: list[str]) -> dict[str, str]:
                 warnings.append(f"ignorado (tipo de arquivo não suportado): {shown}")
             return
         try:
-            if path.stat().st_size > MAX_FILE_BYTES:
+            # Link simbolico numa varredura de pasta: ignorado, para nao sair do
+            # projeto. Em qualquer caso, so arquivo regular: /dev/zero e afins
+            # informam tamanho 0 e nunca terminam de ser lidos.
+            if not explicit and path.is_symlink():
+                return
+            info = path.stat()
+            if not stat.S_ISREG(info.st_mode):
+                if explicit:
+                    warnings.append(f"ignorado (não é um arquivo comum): {shown}")
+                return
+            if info.st_size > MAX_FILE_BYTES:
                 warnings.append(f"ignorado (maior que 1 MB): {shown}")
                 return
             files[shown] = _decode(path.read_bytes())
@@ -107,8 +118,8 @@ def _collect_from_disk(paths: list[str], warnings: list[str]) -> dict[str, str]:
                 dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
                 for name in sorted(names):
                     add(Path(root) / name, explicit=False)
-        elif p.is_file():
-            add(p, explicit=True)
+        elif p.exists() or p.is_symlink():
+            add(p, explicit=True)   # add() recusa o que nao for arquivo comum, com aviso
         else:
             raise RuntimeError(f"caminho não encontrado: {raw}")
     return files
@@ -341,7 +352,10 @@ SCANNER_DIR={scanner_dir}
 [ -d "$SCANNER_DIR/scanner" ] || {{ echo "DedSec: pasta do scanner nao encontrada; scan ignorado." >&2; exit 0; }}
 for PY in python python3 py; do
   if command -v "$PY" >/dev/null 2>&1 && "$PY" -c "import sys; sys.exit(sys.version_info < (3, 11))" >/dev/null 2>&1; then
-    exec "$PY" -c "import sys; sys.path.insert(0, sys.argv[1]); del sys.argv[1]; from scanner.cli import main; sys.exit(main())" "$SCANNER_DIR" scan --staged
+    # Tira o diretorio atual de sys.path: um json.py ou ast.py na raiz do
+    # repositorio substituiria a biblioteca padrao.
+    PYTHONSAFEPATH=1; export PYTHONSAFEPATH
+    exec "$PY" -c "import sys; sys.path[:] = [p for p in sys.path if p not in ('', '.')]; sys.path.insert(0, sys.argv[1]); del sys.argv[1]; from scanner.cli import main; sys.exit(main())" "$SCANNER_DIR" scan --staged
   fi
 done
 echo "DedSec: Python 3.11+ nao encontrado; scan ignorado." >&2

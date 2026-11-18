@@ -18,19 +18,30 @@ class ScanStatus(str, Enum):
     FAILED = "failed"
 
 
+# Dono: letras, numeros e hifens, ate 39 caracteres (regra do GitHub).
+# Repositorio: letras, numeros, ".", "_" e "-", ate 100, nunca "." ou "..".
+# fullmatch, e nao match com "$": em Python o "$" aceita uma quebra de linha
+# no final do texto.
+_URL_GITHUB = re.compile(
+    r"https://github\.com/"
+    r"[A-Za-z0-9][A-Za-z0-9-]{0,38}/"
+    r"(?!\.{1,2}(?:\.git)?$)[A-Za-z0-9_.-]{1,100}"
+)
+
+
 class ScanCreateRequest(BaseModel):
     repo_url: str
 
     @field_validator("repo_url")
     @classmethod
     def validate_github_url(cls, v: str) -> str:
-        pattern = r"^https://github\.com/[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+/?$"
-        if not re.match(pattern, v.rstrip("/")):
+        url = v.strip().rstrip("/")
+        if not _URL_GITHUB.fullmatch(url):
             raise ValueError(
                 "Only public GitHub repository URLs are supported "
                 "(e.g. https://github.com/owner/repo)"
             )
-        return v.rstrip("/")
+        return url
 
 
 class VulnerabilityItem(BaseModel):

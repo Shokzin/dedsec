@@ -1,14 +1,14 @@
-fastapi==0.111.0
-uvicorn[standard]==0.29.0
-pydantic==2.7.1
-pydantic-settings==2.2.1
+# Dependencias da API e do processo trabalhador.
+# O pacote "scanner" nao depende de nada daqui: usa so a biblioteca padrao,
+# porque tambem roda embutido na extensao do editor e no hook do git.
+fastapi==0.165.0
+starlette==1.10.0
+uvicorn[standard]==0.50.1
+pydantic==2.14.3
+pydantic-settings==2.16.3
 supabase==2.4.3
 httpx==0.27.0
 celery==5.4.0
 redis==5.0.4
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-multipart==0.0.9
-gitpython==3.1.43
-python-dotenv==1.0.1
+python-dotenv==1.2.4
 structlog==24.1.0

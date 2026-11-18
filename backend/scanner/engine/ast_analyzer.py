@@ -1,8 +1,8 @@
 import ast
 import uuid
-import os
 from pathlib import Path
 from scanner.engine.finding import Finding
+from scanner.engine.safe_files import is_regular_file_inside
 
 
 class ASTAnalyzer:
@@ -25,9 +25,11 @@ class ASTAnalyzer:
         for rel_path in file_list:
             if not rel_path.endswith(".py"):
                 continue
-            abs_path = os.path.join(repo_path, rel_path)
+            abs_path = Path(repo_path) / rel_path
+            if not is_regular_file_inside(abs_path, Path(repo_path)):
+                continue
             try:
-                source = Path(abs_path).read_text(errors="replace")
+                source = abs_path.read_text(errors="replace")
             except OSError:
                 continue
             findings.extend(self.analyze_content(source, rel_path))

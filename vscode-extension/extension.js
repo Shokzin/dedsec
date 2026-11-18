@@ -51,7 +51,7 @@ function activate(context) {
       pythonCmd = findPython(preferred.trim());
     }
     if (!pythonCmd) {
-      notifyOnce("python", "DedSec: não encontrei o Python 3.10+. Instale ou defina 'dedsec.pythonPath'.");
+      notifyOnce("python", "DedSec: não encontrei o Python 3.11+. Instale ou defina 'dedsec.pythonPath'.");
     }
     return pythonCmd;
   }

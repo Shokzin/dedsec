@@ -6,6 +6,9 @@ Supabase. Ler as claims sem verificar a assinatura permitiria forjar o campo
 "sub"; como estas rotas usam a chave service_role, isso daria a qualquer
 pessoa o poder de apagar a conta de outra.
 """
+import uuid
+
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from supabase import Client
 from app.core.supabase import get_supabase
@@ -14,6 +17,7 @@ from app.core.config import get_settings
 from app.core.rate_limit import limitar
 
 _lim = get_settings()
+logger = structlog.get_logger()
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -41,10 +45,13 @@ async def delete_account(
     # Delete from Supabase Auth using service role
     try:
         db.auth.admin.delete_user(user_id)
-    except Exception as e:
+    except Exception as erro:
+        # O detalhe vai para o log, nao para a resposta: a mensagem do provedor
+        # pode descrever a infraestrutura interna.
+        logger.error("falha_ao_remover_conta", user_id=user_id, error=str(erro))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete account: {str(e)}",
+            detail="Failed to delete account. Please try again later.",
         )
 
     limpar_cache_de_sessao()
@@ -57,7 +64,7 @@ async def delete_account(
     dependencies=[Depends(limitar(_lim.rate_limit_remocao_min, 60, "remover-analise"))],
 )
 async def delete_scan(
-    scan_id: str,
+    scan_id: uuid.UUID,
     db: Client = Depends(get_supabase),
     user_id: str = Depends(get_current_user_id),
 ) -> dict:
@@ -73,7 +80,7 @@ async def delete_scan(
     result = (
         db.table("scans")
         .select("id")
-        .eq("id", scan_id)
+        .eq("id", str(scan_id))
         .eq("user_id", user_id)
         .maybe_single()
         .execute()
@@ -84,5 +91,5 @@ async def delete_scan(
             detail="Scan not found.",
         )
 
-    db.table("scans").delete().eq("id", scan_id).eq("user_id", user_id).execute()
+    db.table("scans").delete().eq("id", str(scan_id)).eq("user_id", user_id).execute()
     return {"message": "Scan deleted."}

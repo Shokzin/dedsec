@@ -22,10 +22,14 @@ Também é possível baixar o `.vsix` em https://dedsec-beta.vercel.app e usar
 
 **Requisito:** Python 3.11 ou mais novo instalado e acessível no PATH.
 
-O scanner vem embutido na extensão, então ela funciona em qualquer projeto,
-não só no repositório do DedSec. Se o projeto aberto tiver o seu próprio
-`backend/scanner`, a extensão usa esse, para que quem desenvolve o DedSec
-teste as regras que está editando.
+O scanner vem embutido na extensão e funciona em qualquer projeto, sem
+internet. A extensão nunca executa código do projeto aberto: usa sempre o
+scanner embutido e chama o Python pelo caminho absoluto.
+
+As configurações `dedsec.pythonPath` e `dedsec.scannerDir` só valem nas
+configurações de usuário; o `.vscode/settings.json` de um projeto não as altera.
+Para testar regras em desenvolvimento, aponte `dedsec.scannerDir` para a pasta
+`backend` do seu clone do DedSec.
 
 ## Como gerar o pacote
 

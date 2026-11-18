@@ -12,6 +12,8 @@ ignore_paths = [
   # (ex.: a regex que procura eval), então o scanner acusa o próprio código.
   "backend/scanner/engine/pattern_scanner.py",
   "backend/scanner/engine/ast_analyzer.py",
+  # Copia gerada do scanner dentro da extensao (fora do git): mesmo motivo.
+  "vscode-extension/scanner/",
   # Falso positivo da regra de IDOR, que confunde Finding(id=...) com uma busca por ID.
   # Remover daqui quando a regra for corrigida.
 ]

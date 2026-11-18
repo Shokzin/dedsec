@@ -5,6 +5,7 @@ sys.path.insert(0, "/scanner")
 
 from worker.celery_app import celery_app
 from app.core.supabase import get_supabase
+from app.core.config import get_settings
 from app.models.scan import ScanStatus
 from scanner.engine.pipeline import ScanPipeline
 import structlog
@@ -37,6 +38,7 @@ def run_scan_task(self, scan_id: str, repo_url: str) -> dict:
         pipeline = ScanPipeline(
             scan_id=scan_id,
             repo_url=repo_url,
+            max_repo_size_mb=get_settings().max_repo_size_mb,
             progress_callback=lambda msg, pct, partial=0: _broadcast_progress(
                 db, scan_id, msg, pct, partial
             ),

@@ -61,18 +61,18 @@ def test_sem_token_e_recusado():
 
 def test_nao_apaga_analise_de_outro_usuario():
     zerar()
-    dubles.BANCO["scans"].append({"id": "analise-da-alice", "user_id": ALICE,
+    dubles.BANCO["scans"].append({"id": "00000000-0000-4000-8000-000000000001", "user_id": ALICE,
                                   "repo_url": "https://github.com/a/b", "status": "completed"})
-    r = cliente.delete("/api/v1/auth/scans/analise-da-alice", headers=H_BOB)
+    r = cliente.delete("/api/v1/auth/scans/00000000-0000-4000-8000-000000000001", headers=H_BOB)
     assert r.status_code == 404, f"Bob apagou analise da Alice: {r.status_code}"
-    assert any(s["id"] == "analise-da-alice" for s in dubles.BANCO["scans"]), "a analise sumiu"
+    assert any(s["id"] == "00000000-0000-4000-8000-000000000001" for s in dubles.BANCO["scans"]), "a analise sumiu"
 
 
 def test_dono_apaga_a_propria_analise():
     zerar()
-    dubles.BANCO["scans"].append({"id": "analise-da-alice", "user_id": ALICE,
+    dubles.BANCO["scans"].append({"id": "00000000-0000-4000-8000-000000000001", "user_id": ALICE,
                                   "repo_url": "https://github.com/a/b", "status": "completed"})
-    r = cliente.delete("/api/v1/auth/scans/analise-da-alice", headers=H_ALICE)
+    r = cliente.delete("/api/v1/auth/scans/00000000-0000-4000-8000-000000000001", headers=H_ALICE)
     assert r.status_code == 200, r.text
     assert not dubles.BANCO["scans"]
 
